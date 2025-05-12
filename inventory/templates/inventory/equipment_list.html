@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Equipment & Calibration</h2>
+  {% if user.role == 'lab_manager' %}
+    <a href="{% url 'add_equipment' %}" class="btn btn-primary mb-3">Add Equipment</a>
+  {% endif %}
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Name</th><th>Serial</th><th>Location</th><th>Last Cal</th><th>Next Cal</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for eq in equipment %}
+      <tr class="{% if eq.is_due_for_calibration %}table-danger{% elif eq.days_to_calibration <= 7 %}table-warning{% endif %}">
+        <td>{{ eq.name }}</td>
+        <td>{{ eq.serial_number }}</td>
+        <td>{{ eq.location }}</td>
+        <td>{{ eq.last_calibration_date }}</td>
+        <td>{{ eq.next_calibration_due }}</td>
+        <td>
+          {% if eq.is_due_for_calibration %}
+            Overdue
+          {% elif eq.days_to_calibration <= 7 %}
+            Due Soon
+          {% else %}
+            OK
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

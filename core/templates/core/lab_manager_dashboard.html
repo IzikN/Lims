@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Lab Manager Dashboard</h2>
+  <div class="row text-center">
+    <div class="col">
+      <div class="card border-primary mb-3">
+        <div class="card-header">Total Samples</div>
+        <div class="card-body text-primary"><h5>{{ total_samples }}</h5></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-warning mb-3">
+        <div class="card-header">Pending</div>
+        <div class="card-body text-warning"><h5>{{ pending }}</h5></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-info mb-3">
+        <div class="card-header">In Progress</div>
+        <div class="card-body text-info"><h5>{{ in_progress }}</h5></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="card border-success mb-3">
+        <div class="card-header">Completed</div>
+        <div class="card-body text-success"><h5>{{ completed }}</h5></div>
+      </div>
+    </div>
+  </div>
+
+  <h4 class="mt-4">Test Types</h4>
+  <ul class="list-group">
+    {% for key, val in test_types.items %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ key }}
+        <span class="badge bg-primary rounded-pill">{{ val }}</span>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <h4 class="mt-4">Expiring Reagents</h4>
+  <ul class="list-group">
+    {% for r in expiring_reagents %}
+      <li class="list-group-item">{{ r.name }} ({{ r.expiry_date }})</li>
+    {% empty %}
+      <li class="list-group-item">All reagents OK</li>
+    {% endfor %}
+  </ul>
+
+  <h4 class="mt-4">Calibration Due</h4>
+  <ul class="list-group">
+    {% for e in calibration_due %}
+      <li class="list-group-item">{{ e.name }} – due {{ e.next_calibration_due }}</li>
+    {% empty %}
+      <li class="list-group-item">All equipment calibrated</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

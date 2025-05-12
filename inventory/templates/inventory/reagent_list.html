@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Reagents Inventory</h2>
+  {% if user.role == 'lab_manager' %}
+    <a href="{% url 'add_reagent' %}" class="btn btn-primary mb-3">Add New Reagent</a>
+  {% endif %}
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Name</th><th>Lot</th><th>Qty</th><th>Expiry</th><th>Status</th><th>Location</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for reagent in reagents %}
+      <tr class="{% if reagent.is_expired %}table-danger{% elif reagent.days_to_expiry <= 7 %}table-warning{% endif %}">
+        <td>{{ reagent.name }}</td>
+        <td>{{ reagent.lot_number }}</td>
+        <td>{{ reagent.quantity }} {{ reagent.unit }}</td>
+        <td>{{ reagent.expiry_date }}</td>
+        <td>
+          {% if reagent.is_expired %}
+            Expired
+          {% elif reagent.days_to_expiry <= 7 %}
+            Expiring Soon
+          {% else %}
+            OK
+          {% endif %}
+        </td>
+        <td>{{ reagent.storage_location }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

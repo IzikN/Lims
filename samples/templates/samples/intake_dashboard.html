@@ -1,0 +1,21 @@
+{% extend base.html %}
+{% load static %}
+
+<h2>Pending Samples</h2>
+{% for sample in samples %}
+  <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+    <p><strong>Sample ID:</strong> {{ sample.id }}</p>
+    <p><strong>Name:</strong> {{ sample.name }}</p>
+    <p><strong>Type:</strong> {{ sample.sample_type }}</p>
+    <p><strong>Description:</strong> {{ sample.description }}</p>
+    <p><strong>Is Urgent:</strong> {{ sample.is_urgent }}</p>
+
+    <form method="post" action="{% url 'intake_dashboard' %}">
+      {% csrf_token %}
+      <input type="hidden" name="sample_id" value="{{ sample.id }}">
+      <button type="submit">Mark as Received</button>
+    </form>
+  </div>
+{% empty %}
+  <p>No pending samples.</p>
+{% endfor %}

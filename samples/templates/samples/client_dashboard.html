@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="text-center mb-5">
+        <img src="{% static 'images/logo.jpg' %}" alt="JaaGee Lab Logo" height="100">
+        <h2>Welcome to JaaGee Lab Client Portal</h2>
+        <p class="text-muted">ISO 17025 Accredited — Scope: Proximate Analysis, Gross Energy, Vitamins, Aflatoxin, Water & Microbial Testing</p>
+    </div>
+
+    <h4>Your Samples</h4>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Sample ID</th>
+                <th>Submitted</th>
+                <th>Product</th>
+                <th>Test(s)</th>
+                <th>Status</th>
+                <th>Result</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for sample in samples %}
+            <tr>
+                <td>{{ sample.sample_id }}</td>
+                <td>{{ sample.date_submitted|date:"Y-m-d" }}</td>
+                <td>{{ sample.product_name }}</td>
+                <td>
+                    {% for a in assignments_by_sample|get_item:sample.id %}
+                        {{ a.get_test_type_display }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for a in assignments_by_sample|get_item:sample.id %}
+                        <span class="badge 
+                            {% if a.status == 'completed' %}bg-success
+                            {% elif a.status == 'submitted' %}bg-info
+                            {% elif a.status == 'in_progress' %}bg-warning
+                            {% else %}bg-secondary{% endif %}">
+                            {{ a.get_test_type_display }}: {{ a.status|capfirst }}
+                        </span><br>
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for a in assignments_by_sample|get_item:sample.id %}
+                        {% if a.review_status == 'approved' and a.result_file %}
+                            <a href="{{ a.result_file.url }}" class="btn btn-sm btn-outline-primary mb-1" download>Download {{ a.get_test_type_display }}</a><br>
+                        {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6">No samples submitted yet.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

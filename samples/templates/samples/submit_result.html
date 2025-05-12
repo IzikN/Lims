@@ -1,0 +1,14 @@
+<h3>Submit Result for {{ assignment.sample.sample_id }} - {{ assignment.get_test_type_display }}</h3>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label>Result Data (text or JSON)</label>
+        <textarea name="result_data" rows="5" class="form-control" required>{{ assignment.result_data }}</textarea>
+    </div>
+    <div class="mb-3">
+        <label>Upload Attachment (optional)</label>
+        <input type="file" name="result_file" class="form-control" />
+    </div>
+    <button class="btn btn-primary">Submit Result</button>
+</form>

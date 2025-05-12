@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<style>
+.hero {
+  background: linear-gradient(to right, #003366, #004080);
+  color: white;
+  padding: 60px 0;
+}
+.card-icon {
+  font-size: 2rem;
+  color: #004080;
+}
+</style>
+
+<div class="hero text-center">
+  <div class="container">
+    <h1 class="display-4 fw-bold">Welcome to JaaGeeLab</h1>
+    <p class="lead">ISO 17025 Accredited Laboratory | Trusted Results | Industry-Grade LIMS</p>
+    <a href="{% url 'client_dashboard' %}" class="btn btn-light btn-lg mt-3">Client Login</a>
+    <a href="{% url 'analyst_dashboard' %}" class="btn btn-outline-light btn-lg mt-3 ms-2">Staff Login</a>
+  </div>
+</div>
+
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold">Our Scope of Analysis</h2>
+    <p class="text-muted">We are accredited to perform the following high-quality tests.</p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm text-center">
+        <div class="card-body">
+          <div class="card-icon mb-3">🧪</div>
+          <h5 class="card-title">Proximate Analysis</h5>
+          <p class="card-text">Accurate analysis of moisture, crude protein, fat, fiber, and ash content in food/feed samples.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm text-center">
+        <div class="card-body">
+          <div class="card-icon mb-3">🌽</div>
+          <h5 class="card-title">Aflatoxin Testing</h5>
+          <p class="card-text">Detection and quantification of aflatoxins using Neogen AccuScan™, ensuring food safety compliance.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm text-center">
+        <div class="card-body">
+          <div class="card-icon mb-3">🔥</div>
+          <h5 class="card-title">Gross Energy</h5>
+          <p class="card-text">Calorific value determination via bomb calorimetry for feeds, ensuring precise energy profiling.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm text-center">
+        <div class="card-body">
+          <div class="card-icon mb-3">💊</div>
+          <h5 class="card-title">Vitamin Analysis</h5>
+          <p class="card-text">Quantitative analysis of key vitamins essential in fortified foods and animal feed supplements.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm text-center">
+        <div class="card-body">
+          <div class="card-icon mb-3">💧</div>
+          <h5 class="card-title">Water Analysis</h5>
+          <p class="card-text">Physical, chemical, and microbiological evaluation of water samples to national and WHO standards.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="card h-100 shadow-sm text-center">
+        <div class="card-body">
+          <div class="card-icon mb-3">🧫</div>
+          <h5 class="card-title">Microbial Analysis</h5>
+          <p class="card-text">Testing for bacteria, fungi, and pathogens to validate product safety and shelf life.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bg-light py-5">
+  <div class="container text-center">
+    <h4 class="fw-bold">Accreditation & Compliance</h4>
+    <p class="text-muted">JaaGeeLab is ISO/IEC 17025 accredited – delivering results with integrity, traceability, and confidence.</p>
+    <img src="{% static 'images/iso17025_badge.jpg' %}" alt="ISO 17025 Certified" width="150">
+  </div>
+</div>
+
+<div class="container py-5 text-center">
+  <h5>Need to submit a sample?</h5>
+  <a href="{% url 'submit_sample' %}" class="btn btn-primary btn-lg mt-2">Submit Sample</a>
+</div>
+
+{% endblock %}

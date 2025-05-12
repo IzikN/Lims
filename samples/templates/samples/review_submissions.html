@@ -1,0 +1,95 @@
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-primary text-white py-3">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">
+                <i class="fas fa-clipboard-check me-2"></i>Submitted Results for Review
+                <span class="badge bg-white text-primary ms-2">{{ submissions.count }}</span>
+            </h3>
+            <div>
+                <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#filterModal">
+                    <i class="fas fa-filter me-1"></i> Filter
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Sample ID</th>
+                        <th>Test Type</th>
+                        <th>Analyst</th>
+                        <th>Submitted</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in submissions %}
+                    <tr>
+                        <td class="ps-4 fw-bold">
+                            <a href="#" data-bs-toggle="modal" data-bs-target="#sampleModal{{ sub.sample.id }}" class="text-decoration-none">
+                                {{ sub.sample.sample_id }}
+                            </a>
+                            <div class="small text-muted">{{ sub.sample.name }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">
+                                <i class="fas fa-vial me-1"></i>
+                                {{ sub.get_test_type_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm me-2">
+                                    <span class="avatar-title bg-light text-dark rounded-circle">
+                                        {{ sub.analyst.get_full_name|first|upper }}
+                                    </span>
+                                </div>
+                                {{ sub.analyst.get_full_name }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-semibold">{{ sub.completed_at|date:"M d" }}</div>
+                            <div class="small text-muted">{{ sub.completed_at|date:"H:i" }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">Awaiting Review</span>
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'review_result' sub.id %}" class="btn btn-sm btn-primary">
+                                    <i class="fas fa-search me-1"></i> Review
+                                </a>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-file-alt me-2"></i> View Details
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-download me-2"></i> Download Results
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="#">
+                                            <i class="fas fa-flag me-2"></i> Flag Issue
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-check-circle fa-3x mb-3 opacity-25"></i>
+                               
