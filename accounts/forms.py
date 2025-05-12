@@ -1,21 +1,54 @@
-# forms.py
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import User
 
-class UserRegistrationForm(UserCreationForm):
+
+class ClientRegistrationForm(UserCreationForm):
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'email', 'role', 'company_name', 'password1', 'password2']
+        fields = ['username', 'email', 'company_name', 'password1', 'password2']
 
-    def clean(self):
-        cleaned_data = super().clean()
-        role = cleaned_data.get("role")
-        company_name = cleaned_data.get("company_name")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                'class': 'form-control',
+                'style': 'height: 45px;',
+                'placeholder': field.label
+            })
 
-        if role == "client" and not company_name:
-            self.add_error('company_name', "Clients must enter a company name.")
-        elif role != "client":
-            cleaned_data['company_name'] = None
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = 'client'
+        if commit:
+            user.save()
+        return user
 
-        return cleaned_data
+
+class StaffRegistrationForm(UserCreationForm):
+    ROLE_CHOICES = [
+        ('analyst', 'Analyst'),
+        ('lab_manager', 'Lab Manager'),
+        ('customer_service', 'Customer Service'),
+    ]
+    role = forms.ChoiceField(choices=ROLE_CHOICES)
+
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'staff_name', 'role', 'password1', 'password2']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                'class': 'form-control',
+                'style': 'height: 45px;',
+                'placeholder': field.label
+            })
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = self.cleaned_data['role']
+        if commit:
+            user.save()
+        return user

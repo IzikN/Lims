@@ -1,29 +1,42 @@
-<!-- templates/registration/login.html -->
 {% extends 'base.html' %}
+
 {% block title %}Login{% endblock %}
+
 {% block content %}
-<div class="card mx-auto" style="max-width: 400px;">
-    <div class="card-body">
-        <h3 class="card-title text-center">Login</h3>
-        {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
-        <form method="post">
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card shadow">
+        <div class="card-header bg-info text-white text-center">
+          <h4>Login</h4>
+        </div>
+        <div class="card-body">
+          {% if messages %}
+            <div class="alert alert-danger">
+              {% for message in messages %}
+                <p>{{ message }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+          
+          <form method="post">
             {% csrf_token %}
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <input name="username" type="text" class="form-control" required>
+            <div class="form-group mb-3">
+              <label for="username">Username</label>
+              <input type="text" name="username" id="username" class="form-control" placeholder="Username" required>
             </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input name="password" type="password" class="form-control" required>
+            <div class="form-group mb-3">
+              <label for="password">Password</label>
+              <input type="password" name="password" id="password" class="form-control" placeholder="Password" required>
             </div>
-            <button type="submit" class="btn btn-success w-100">Login</button>
-        </form>
+            <button type="submit" class="btn btn-info w-100">Login</button>
+          </form>
+        </div>
+        <div class="card-footer text-center">
+          Don’t have an account? <a href="{% url 'choose_role' %}">Register</a>
+        </div>
+      </div>
     </div>
-    <p class="text-center">
-      Don't have an account? <a href="{% url 'register' %}">Register here</a>
-  </p>
-  
+  </div>
 </div>
 {% endblock %}

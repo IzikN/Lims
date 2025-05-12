@@ -18,8 +18,8 @@
   <div class="container">
     <h1 class="display-4 fw-bold">Welcome to JaaGeeLab</h1>
     <p class="lead">ISO 17025 Accredited Laboratory | Trusted Results | Industry-Grade LIMS</p>
-    <a href="{% url 'client_dashboard' %}" class="btn btn-light btn-lg mt-3">Client Login</a>
-    <a href="{% url 'analyst_dashboard' %}" class="btn btn-outline-light btn-lg mt-3 ms-2">Staff Login</a>
+    <a href="{% url 'login' %}" class="btn btn-light btn-lg mt-3">Client Login</a>
+    <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg mt-3 ms-2">Staff Login</a>
   </div>
 </div>
 
@@ -98,11 +98,6 @@
     <p class="text-muted">JaaGeeLab is ISO/IEC 17025 accredited – delivering results with integrity, traceability, and confidence.</p>
     <img src="{% static 'images/iso17025_badge.jpg' %}" alt="ISO 17025 Certified" width="150">
   </div>
-</div>
-
-<div class="container py-5 text-center">
-  <h5>Need to submit a sample?</h5>
-  <a href="{% url 'submit_sample' %}" class="btn btn-primary btn-lg mt-2">Submit Sample</a>
 </div>
 
 {% endblock %}

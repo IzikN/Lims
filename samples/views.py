@@ -60,7 +60,7 @@ def submit_sample(request):
         sample_id = request.POST.get('sample_id')
         name = request.POST.get('name')
         sample_type = request.POST.get('sample_type')
-        client_company = request.POST.get('client_company')  # ✅ Fixed line
+        client = request.POST.get('client_company')  # ✅ Fixed line
         description = request.POST.get('description')
         client_email = request.POST.get('client_email')
         client_company_address = request.POST.get('client_company_address')
@@ -75,7 +75,7 @@ def submit_sample(request):
                 sample_id=sample_id,
                 name=name,
                 sample_type=sample_type,
-                client_company=client_company,  # ✅ Include in model
+                client=client,  # ✅ Include in model
                 description=description,
                 client_email=client_email,
                 client_company_address=client_company_address,
@@ -207,20 +207,14 @@ def review_result(request, assignment_id):
 
 @login_required
 def client_dashboard(request):
-    if request.user.role != 'client':
-        return redirect('dashboard')
+    # Assuming you are using the User model and 'client' is part of your user model
+    if request.user.role == 'client':
+        samples = Sample.objects.filter(client=request.user)
+    else:
+        samples = Sample.objects.all()  # For admin or other roles
+    
+    return render(request, 'samples/client_dashboard.html', {'samples': samples})
 
-    samples = Sample.objects.filter(client=request.user).order_by('-date_submitted')
-    assignments = TestAssignment.objects.filter(sample__in=samples)
-
-    assignments_by_sample = {}
-    for assign in assignments:
-        assignments_by_sample.setdefault(assign.sample.id, []).append(assign)
-
-    return render(request, 'samples/client_dashboard.html', {
-        'samples': samples,
-        'assignments_by_sample': assignments_by_sample,
-    })
 @login_required
 def submit_sample(request):
     if request.user.role != 'customer_service':

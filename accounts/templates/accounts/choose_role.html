@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="container text-center">
+    <h2>Register</h2>
+    <p>Choose your role to continue registration:</p>
+    <a href="{% url 'register_client' %}" class="btn btn-success m-2">I'm a Client</a>
+    <a href="{% url 'register_staff' %}" class="btn btn-primary m-2">I'm a Staff Member</a>
+  </div>
+{% endblock %}

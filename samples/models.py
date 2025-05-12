@@ -23,7 +23,13 @@ class Sample(models.Model):
 
     sample_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
     name = models.CharField(max_length=255, null=True, blank=True)
-    client_company = models.CharField(max_length=100, blank=True)
+    client = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Assuming User model is used for clients
+        related_name='samples',  # This is the reverse relationship from User
+        on_delete=models.CASCADE,
+        null=True,  # Clients may not be present initially
+        blank=True
+    )
     analysis_type = models.CharField(max_length=100, choices=SAMPLE_TYPES, blank=True, null=True)
     sample_type = models.CharField(max_length=50, choices=SAMPLE_TYPES, null=True, blank=True)
     description = models.TextField(blank=True)
@@ -45,6 +51,7 @@ class Sample(models.Model):
 
     def __str__(self):
         return f"{self.sample_id} - {self.name}"
+
 
 
 class TestRequest(models.Model):

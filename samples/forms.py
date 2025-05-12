@@ -5,12 +5,18 @@ from .models import Sample
 class SampleForm(forms.ModelForm):
     class Meta:
         model = Sample
-        fields = ['sample_id', 'name', 'sample_type', 'description', 'client_email', 'client_company_address', 'client_company', 'weight', 'analysis_type', 'is_urgent']
-    
+        fields = ['sample_id', 'name', 'client', 'analysis_type', 'sample_type', 
+                  'description', 'client_email', 'client_company_address', 
+                  'weight', 'is_urgent', 'received_by', 'status']
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 3}),
-            'company_address': forms.Textarea(attrs={'rows': 2}),
+            'client': forms.Select(),  # This will render a dropdown for the client (User model)
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Optionally, you can filter the 'client' field to only show 'clients' in the dropdown
+        self.fields['client'].queryset = self.fields['client'].queryset.filter(role='client')
+
 
     def save(self, commit=True):
         instance = super().save(commit=False)
