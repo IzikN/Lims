@@ -13,16 +13,23 @@ def reagent_list(request):
 
 @login_required
 def add_reagent(request):
-    if not is_lab_manager(request.user):
-        return redirect('reagent_list')
+    if request.user.role != 'lab_manager':
+        messages.warning(request, "Access denied.")
+        return redirect('dashboard')
 
-    form = ReagentForm(request.POST or None)
-    if form.is_valid():
-        instance = form.save(commit=False)
-        instance.added_by = request.user
-        instance.save()
-        return redirect('reagent_list')
+    if request.method == 'POST':
+        form = ReagentForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Reagent added successfully!")
+            return redirect('reagent_list')
+        else:
+            messages.error(request, "There was an error with the form.")
+    else:
+        form = ReagentForm()
+
     return render(request, 'inventory/reagent_form.html', {'form': form})
+
 
 @login_required
 def equipment_list(request):

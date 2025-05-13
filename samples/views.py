@@ -26,11 +26,45 @@ def dashboard(request):
 
 
 @login_required
-def intake_dashboard(request):
-    if request.user.role != 'lab_manager':
-        return redirect('lab-dashboard')
+def generate_client_id():
+    prefix = "jglsp"
+    year = datetime.now().year % 100
+    latest_sample = Sample.objects.order_by('-created_at').first()
+    
+    if latest_sample and latest_sample.client_id.startswith(f"{prefix}{year:02d}"):
+        last_number = int(latest_sample.client_id.split("-")[-1])
+    else:
+        last_number = 0
 
-    pending_samples = Sample.objects.filter(status='pending')
+    return f"{prefix}{year:02d}-{last_number + 1:02d}"
+@login_required
+def intake_dashboard(request):
+    if request.method == "POST":
+        client_id = generate_client_id()
+        num_samples = int(request.POST.get('num_samples'))
+        weights = request.POST.getlist('weights[]')
+        charges = request.POST.get('charges')
+        
+        for i in range(num_samples):
+            Sample.objects.create(
+                client_id=client_id,
+                sample_id=f"{client_id}-{i+1:02d}",
+                name=request.POST['name'],
+                sample_type=request.POST['sample_type'],
+                description=request.POST['description'],
+                client_email=request.POST['client_email'],
+                client_company_address=request.POST['client_company_address'],
+                weight=weights[i],
+                analysis_type=request.POST['analysis_type'],
+                charge=charges,
+                is_urgent='is_urgent' in request.POST
+            )
+        return redirect('intake_dashboard')
+
+    return render(request, 'samples/intake_dashboard.html')
+
+
+
 
     if request.method == 'POST':
         sample_id = request.POST.get('sample_id')
@@ -113,15 +147,26 @@ def submit_sample(request):
 @login_required
 def assign_test(request, sample_id):
     if request.user.role != 'lab_manager':
+        messages.warning(request, "Access denied.")
         return redirect('dashboard')
 
-    sample = Sample.objects.get(id=sample_id)
+    sample = get_object_or_404(Sample, id=sample_id)
+
+    if sample.assigned:  # Prevent reassigning
+        messages.error(request, "This sample has already been assigned.")
+        return redirect('intake_dashboard')
+
     analysts = User.objects.filter(role='analyst')
 
     if request.method == 'POST':
-        test_type = request.POST['test_type']
-        analyst_id = request.POST['analyst']
-        analyst = User.objects.get(id=analyst_id)
+        test_type = request.POST.get('test_type')
+        analyst_id = request.POST.get('analyst')
+
+        if not test_type or not analyst_id:
+            messages.error(request, "Test type and analyst must be selected.")
+            return redirect('assign_test', sample_id=sample.id)
+
+        analyst = get_object_or_404(User, id=analyst_id)
 
         TestAssignment.objects.create(
             sample=sample,
@@ -131,13 +176,17 @@ def assign_test(request, sample_id):
         )
 
         sample.status = 'in_progress'
+        sample.assigned = True
         sample.save()
+
+        messages.success(request, f"Sample assigned to {analyst.get_full_name()}.")
         return redirect('intake_dashboard')
 
     return render(request, 'samples/assign_test.html', {
         'sample': sample,
         'analysts': analysts,
     })
+
 
 @login_required
 def analyst_dashboard(request):

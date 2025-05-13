@@ -1,91 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container mt-5">
 
+  <!-- Notification Messages -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
 
-<div class="card shadow-sm mb-5">
-    <div class="card-header bg-info text-white">
-        <h3 class="mb-0">
-            <i class="fas fa-clipboard-list me-2"></i>Assigned Tests
-            <span class="badge bg-light text-dark float-end">{{ assignments.count }} total</span>
-        </h3>
+  <h3 class="mb-4">Assign Test to Analyst</h3>
+
+  <!-- Sample Info Card -->
+  <div class="card mb-4 border-info">
+    <div class="card-body">
+      <h5 class="card-title">Sample: {{ sample.name }}</h5>
+      <p class="card-text">
+        <strong>ID:</strong> {{ sample.id }} <br>
+        <strong>Status:</strong> {{ sample.status|capfirst }} <br>
+        <strong>Received On:</strong> {{ sample.date_received }}
+      </p>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-4">Sample ID</th>
-                        <th>Test Type</th>
-                        <th>Status</th>
-                        <th class="text-end pe-4">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for a in assignments %}
-                    <tr>
-                        <td class="ps-4 fw-bold">{{ a.sample.sample_id }}</td>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-sm me-2">
-                                    <span class="avatar-title bg-light-info text-info rounded-circle">
-                                        <i class="fas fa-vial"></i>
-                                    </span>
-                                </div>
-                                {{ a.get_test_type_display }}
-                            </div>
-                        </td>
-                        <td>
-                            {% if a.status == 'assigned' %}
-                                <span class="badge bg-secondary">Assigned</span>
-                            {% elif a.status == 'in_progress' %}
-                                <span class="badge bg-warning text-dark">In Progress</span>
-                            {% elif a.status == 'submitted' %}
-                                <span class="badge bg-primary">Submitted</span>
-                            {% else %}
-                                <span class="badge bg-success">Completed</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-end pe-4">
-                            {% if a.status == 'assigned' %}
-                                <form method="post" action="{% url 'start_test' a.id %}" class="d-inline">
-                                    {% csrf_token %}
-                                    <button class="btn btn-sm btn-warning">
-                                        <i class="fas fa-play-circle me-1"></i>Start
-                                    </button>
-                                </form>
-                            {% elif a.status == 'in_progress' %}
-                                <a href="{% url 'submit_result' a.id %}" class="btn btn-sm btn-success">
-                                    <i class="fas fa-check-circle me-1"></i>Submit
-                                </a>
-                            {% else %}
-                                <span class="text-muted small">
-                                    <i class="fas fa-check-double me-1"></i>Completed
-                                </span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4">
-                            <div class="text-muted">
-                                <i class="fas fa-clipboard-check fa-2x mb-3"></i>
-                                <h5>No tests assigned</h5>
-                                <p class="mb-0">All tests are completed or not yet assigned</p>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+  </div>
+
+  <!-- Assignment Form -->
+  <div class="card">
+    <div class="card-body">
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="test_type" class="form-label">Select Test Type</label>
+          <select class="form-select" name="test_type" required>
+            <option value="" disabled selected>Choose...</option>
+            <option value="Proximate">Proximate</option>
+            <option value="Gross Energy">Gross Energy</option>
+            <option value="Aflatoxin">Aflatoxin</option>
+            <option value="Moisture Content">Moisture Content</option>
+            <!-- Add more if needed -->
+          </select>
         </div>
-    </div>
-    <div class="card-footer bg-light">
-        <div class="d-flex justify-content-between align-items-center">
-            <small class="text-muted">Last updated: {% now "DATETIME_FORMAT" %}</small>
-            <div class="legend">
-                <span class="badge bg-secondary me-2">Assigned</span>
-                <span class="badge bg-warning text-dark me-2">In Progress</span>
-                <span class="badge bg-primary me-2">Submitted</span>
-                <span class="badge bg-success">Completed</span>
-            </div>
+
+        <div class="mb-3">
+          <label for="analyst" class="form-label">Assign to Analyst</label>
+          <select class="form-select" name="analyst" required>
+            <option value="" disabled selected>Choose analyst...</option>
+            {% for analyst in analysts %}
+              <option value="{{ analyst.id }}">{{ analyst.get_full_name }}</option>
+            {% endfor %}
+          </select>
         </div>
+
+        <div class="text-end">
+          <a href="{% url 'intake_dashboard' %}" class="btn btn-secondary me-2">Cancel</a>
+          <button type="submit" class="btn btn-primary">Assign Test</button>
+        </div>
+      </form>
     </div>
+  </div>
+
 </div>
+{% endblock %}

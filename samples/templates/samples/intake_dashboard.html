@@ -1,6 +1,7 @@
-{% extend base.html %}
+{% extends 'base.html' %}
 {% load static %}
 
+{% block content %}
 <h2>Pending Samples</h2>
 {% for sample in samples %}
   <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
@@ -19,3 +20,5 @@
 {% empty %}
   <p>No pending samples.</p>
 {% endfor %}
+{% endblock %}
+

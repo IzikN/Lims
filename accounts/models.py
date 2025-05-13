@@ -11,6 +11,8 @@ class User(AbstractUser):
     role = models.CharField(max_length=30, choices=ROLE_CHOICES)
     company_name = models.CharField(max_length=255, blank=True, null=True)
     staff_name = models.CharField(max_length=255, blank=True, null=True)
+    is_analyst = models.BooleanField(default=False)
+    is_lab_manager = models.BooleanField(default=False)
 
     def __str__(self):
         return self.username
