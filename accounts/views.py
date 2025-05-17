@@ -27,7 +27,7 @@ def login_view(request):
             elif user.role == 'lab_manager':
                 return redirect('lab_manager_dashboard')
             elif user.role == 'customer_service':
-                return redirect('submit_sample_form')
+                return redirect('customer_service_dashboard')
         else:
             messages.error(request, 'Invalid credentials')
 
@@ -72,7 +72,7 @@ def lab_manager_dashboard(request):
 
 @login_required
 def submit_sample_form(request):
-    return render(request, 'samples/customer_service_form.html')
+    return render(request, 'samples/test_request_form.html')
 
 
 

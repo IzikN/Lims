@@ -1,153 +1,72 @@
 from django.db import models
-from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import User
 from django.utils import timezone
+from django.conf import settings
 
-User = get_user_model()
+class Client(models.Model):
+    name = models.CharField(max_length=255)
+    organization = models.CharField(max_length=255)
+    address = models.TextField()
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    client_id = models.CharField(max_length=20, unique=True, blank=True)
 
-class Sample(models.Model):
-    SAMPLE_TYPES = [
-        ('food', 'Food'),
-        ('feed', 'Feed'),
-        ('water', 'Water'),
-        ('ingredient', 'Raw Material'),
-        ('other', 'Other'),
-    ]
-
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('received', 'Received'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
-    ]
-
-    sample_id = models.CharField(max_length=100, unique=True, null=True, blank=True)
-    name = models.CharField(max_length=255, null=True, blank=True)
-    client = models.ForeignKey(
-        settings.AUTH_USER_MODEL,  # Assuming User model is used for clients
-        related_name='samples',  # This is the reverse relationship from User
-        on_delete=models.CASCADE,
-        null=True,  # Clients may not be present initially
-        blank=True
-    )
-    analysis_type = models.CharField(max_length=100, choices=SAMPLE_TYPES, blank=True, null=True)
-    sample_type = models.CharField(max_length=50, choices=SAMPLE_TYPES, null=True, blank=True)
-    description = models.TextField(blank=True)
-    client_email = models.EmailField(null=True)
-    client_company_address = models.CharField(max_length=255, null=True, blank=True)
-    weight = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # e.g., in grams or kg
-    is_urgent = models.BooleanField(default=False)
-
-    received_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        related_name='received_samples',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
-
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    created_at = models.DateTimeField(default=timezone.now)
+    def save(self, *args, **kwargs):
+        if not self.client_id:
+            last = Client.objects.order_by('id').last()
+            next_num = last.id + 1 if last else 1
+            self.client_id = f"JGLSP{2500 + next_num:04d}"
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.sample_id} - {self.name}"
+        return f"{self.name} ({self.client_id})"
 
 
+ANALYSIS_CHOICES = [
+    ('proximate', 'Proximate'),
+    ('aflatoxin', 'Aflatoxin'),
+    ('gross_energy', 'Gross Energy'),
+    ('metabolizable_energy', 'Metabolizable Energy'),
+    ('vitamins', 'Vitamins'),
+]
+
+STATUS_CHOICES = [
+    ('pending', 'Pending'),
+    ('in_progress', 'In Progress'),
+    ('completed', 'Completed'),
+    ('cancelled', 'Cancelled'),
+]
 
 class TestRequest(models.Model):
-    TEST_TYPES = [
-        ('proximate', 'Proximate Analysis'),
-        ('ge', 'Gross Energy'),
-        ('vitamin', 'Vitamin Analysis'),
-        ('aflatoxin', 'Aflatoxin Testing'),
-        ('water', 'Water Analysis'),
-        ('microbial', 'Microbial Analysis'),
-    ]
-
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    tests_required = models.TextField(help_text="Comma-separated test names")
-    test_type = models.CharField(max_length=50, choices=TEST_TYPES, blank=True)
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='created_test_requests'
-    )
-    date_requested = models.DateField(auto_now_add=True)
+    client = models.ForeignKey('Client', on_delete=models.CASCADE, null=True)
+    organization = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20)
+    number_of_samples = models.IntegerField(default=1)
+    nature_of_samples = models.TextField(blank=True, default='')
+    parameters = models.TextField(default='Proximate', blank=True)
+    proposed_date_of_collection = models.DateField(null=True, blank=True)
+    total_amount_charged = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    name_of_receiver = models.CharField(max_length=255, default='Unknown', blank=True)
+    job_description = models.CharField(max_length=255, default='N/A', blank=True)
+    signature = models.CharField(max_length=255, default='N/A', blank=True)
+    analysis_types = models.CharField(max_length=255, choices=ANALYSIS_CHOICES, default='proximate')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Request for {self.sample.sample_id}"
+        return f"Request by {self.client.name} ({self.client.client_id})"
 
-
-class TestAssignment(models.Model):
-    STATUS_CHOICES = [
-        ('assigned', 'Assigned'),
-        ('in_progress', 'In Progress'),
-        ('completed', 'Completed'),
-        ('submitted', 'Submitted for Review'),
-    ]
-
-    REVIEW_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('approved', 'Approved'),
-        ('rejected', 'Rejected'),
-    ]
-
-    test_request = models.ForeignKey(
-        TestRequest,
-        on_delete=models.CASCADE,
-        related_name='assignments'
-    )
-    analyst = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='assigned_tests'
-    )
-    assigned_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name='assigned_by_user'
-    )
-    reviewed_by = models.ForeignKey(
-        User,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='reviews_done'
-    )
-
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='assigned')
-    review_status = models.CharField(max_length=20, choices=REVIEW_STATUS_CHOICES, default='pending')
-
-    assigned_at = models.DateTimeField(auto_now_add=True)
-    started_at = models.DateTimeField(blank=True, null=True)
-    completed_at = models.DateTimeField(blank=True, null=True)
-    reviewed_at = models.DateTimeField(blank=True, null=True)
-
-    result_data = models.TextField(blank=True, null=True)
-    result_file = models.FileField(upload_to='results/', blank=True, null=True)
-    review_comments = models.TextField(blank=True, null=True)
+class Sample(models.Model):
+    test_request = models.ForeignKey(TestRequest, on_delete=models.CASCADE, related_name='samples', null=True, blank=True)
+    client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='samples')
+    sample_id = models.CharField(max_length=100)
+    nature = models.CharField(max_length=255, default='Feed')
+    weight = models.DecimalField(max_digits=10, decimal_places=3, default=0.0)
+    parameters = models.TextField(default='Proximate')
 
     def __str__(self):
-        return f"{self.test_request.get_test_type_display()} for {self.test_request.sample.sample_id}"
+        return f"{self.sample_id} - {self.nature}"
 
-    @property
-    def sample(self):
-        return self.test_request.sample
-
-    class Meta:
-        ordering = ['-assigned_at']
-        verbose_name = 'Test Assignment'
-        verbose_name_plural = 'Test Assignments'
-
-
-class Attachment(models.Model):
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE)
-    file = models.FileField(upload_to='attachments/')
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    label = models.CharField(max_length=100, blank=True)
-
-    def __str__(self):
-        return f"{self.label or 'Attachment'} for {self.sample.sample_id}"

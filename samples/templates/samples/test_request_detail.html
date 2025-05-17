@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+  <h2>Test Request Detail</h2>
+  <hr>
+
+  <h4>Client Information</h4>
+  <p><strong>Client Name:</strong> {{ test_request.client.name }}</p>
+  <p><strong>Client ID:</strong> {{ test_request.client.client_id }}</p>
+  <p><strong>Organization:</strong> {{ test_request.organization }}</p>
+  <p><strong>Email:</strong> {{ test_request.email }}</p>
+  <p><strong>Phone:</strong> {{ test_request.phone }}</p>
+  <p><strong>Address:</strong> {{ test_request.client.address }}</p>
+
+  <h4>Sample Information</h4>
+  <p><strong>Number of Samples:</strong> {{ test_request.number_of_samples }}</p>
+  <p><strong>Nature of Samples:</strong> {{ test_request.nature_of_samples }}</p>
+  <p><strong>Proposed Collection Date:</strong> {{ test_request.proposed_date_of_collection }}</p>
+  <p><strong>Parameters:</strong> {{ test_request.parameters }}</p>
+  <p><strong>Analysis Types:</strong> {{ test_request.analysis_types }}</p>
+
+  <h4>Financial & Processing</h4>
+  <p><strong>Total Amount Charged:</strong> ₦{{ test_request.total_amount_charged }}</p>
+  <p><strong>Amount Paid:</strong> ₦{{ test_request.amount_paid }}</p>
+  <p><strong>Status:</strong> {{ test_request.get_status_display }}</p>
+  <p><strong>Submitted By:</strong> {{ test_request.submitted_by }}</p>
+  <p><strong>Submitted On:</strong> {{ test_request.created_at }}</p>
+
+  <h4>Logistics</h4>
+  <p><strong>Received By:</strong> {{ test_request.name_of_receiver }}</p>
+  <p><strong>Job Description:</strong> {{ test_request.job_description }}</p>
+  <p><strong>Signature:</strong> {{ test_request.signature }}</p>
+
+  {% if test_request.samples.exists %}
+    <h4>Samples</h4>
+    <table border="1" cellpadding="5" cellspacing="0">
+      <tr>
+        <th>Sample ID</th>
+        <th>Weight</th>
+        <th>Nature</th>
+        <th>Parameters</th>
+      </tr>
+      {% for sample in test_request.samples.all %}
+      <tr>
+        <td>{{ sample.sample_id }}</td>
+        <td>{{ sample.weight }} g</td>
+        <td>{{ sample.nature }}</td>
+        <td>{{ sample.parameters }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+
+  <br>
+  <a href="{% url 'intake_dashboard' %}" style="text-decoration: underline; color: blue;">Back to Dashboard</a>
+</div>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<div class="container">
+  <h2 class="mt-4">Sample Test Request Form</h2>
+  <form id="testRequestForm" method="post">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label>Client ID</label>
+      <input type="text" class="form-control" name="client_id" value="{{ client_id }}" readonly>
+    </div>
+
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" class="form-control" name="client_name" required>
+    </div>
+
+    <div class="form-group">
+      <label>Organization</label>
+      <input type="text" class="form-control" name="organization">
+    </div>
+
+    <div class="form-group">
+      <label>Address</label>
+      <textarea class="form-control" name="address" rows="2"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" class="form-control" name="email">
+    </div>
+
+    <div class="form-group">
+      <label>Phone Number</label>
+      <input type="text" class="form-control" name="phone" required>
+    </div>
+
+    <div class="form-group">
+      <label>Nature of Sample</label>
+      <input type="text" class="form-control" name="nature_of_samples" required>
+    </div>
+
+    <div class="form-group">
+      <label>Number of Samples</label>
+      <input type="number" class="form-control mb-2" name="number_of_samples" id="sampleCount" required>
+    </div>
+
+    <div id="sampleDetails" class="mb-3"></div>
+
+    <div class="form-group">
+      <label>Proposed Date of Collection</label>
+      <input type="date" class="form-control" name="proposed_date" required>
+    </div>
+
+    <div class="form-group">
+      <label>Total Amount Charged</label>
+      <input type="number" class="form-control" name="total_amount" required>
+    </div>
+
+    <div class="form-group">
+      <label>Amount Paid</label>
+      <input type="number" class="form-control" name="amount_paid" required>
+    </div>
+
+    <div class="form-group">
+      <label>Name of Receiver</label>
+      <input type="text" class="form-control" name="receiver" required>
+    </div>
+
+    <div class="form-group">
+      <label>Job Description</label>
+      <textarea class="form-control" name="job_description" rows="2"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Signature</label>
+      <input type="text" class="form-control" name="signature" required>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const sampleCountInput = document.getElementById('sampleCount');
+  const sampleDetails = document.getElementById('sampleDetails');
+
+  sampleCountInput.addEventListener('input', function () {
+    const count = parseInt(this.value);
+    sampleDetails.innerHTML = '';
+
+    for (let i = 0; i < count; i++) {
+      const row = document.createElement('div');
+      row.className = 'form-row mb-3';
+
+      const idCol = document.createElement('div');
+      idCol.className = 'col';
+      const idInput = document.createElement('input');
+      idInput.type = 'text';
+      idInput.name = 'sample_ids[]';
+      idInput.className = 'form-control';
+      idInput.placeholder = `Sample ID ${i + 1}`;
+      idInput.required = true;
+      idCol.appendChild(idInput);
+
+      const weightCol = document.createElement('div');
+      weightCol.className = 'col';
+      const weightInput = document.createElement('input');
+      weightInput.type = 'text';
+      weightInput.name = 'sample_weights[]';
+      weightInput.className = 'form-control';
+      weightInput.placeholder = `Weight ${i + 1} (g)`;
+      weightInput.required = true;
+      weightCol.appendChild(weightInput);
+
+      const paramCol = document.createElement('div');
+      paramCol.className = 'col';
+      const paramSelect = document.createElement('select');
+      paramSelect.name = 'sample_parameters_' + i + '[]';
+      paramSelect.className = 'form-control';
+      paramSelect.multiple = true;
+      paramSelect.required = true;
+
+      const options = ['Proximate', 'Aflatoxin', 'Gross Energy', 'Metabolizable Energy', 'Vitamins'];
+      options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt;
+        paramSelect.appendChild(option);
+      });
+
+      paramCol.appendChild(paramSelect);
+
+      row.appendChild(idCol);
+      row.appendChild(weightCol);
+      row.appendChild(paramCol);
+
+      sampleDetails.appendChild(row);
+    }
+  });
+});
+</script>
+{% endblock %}
