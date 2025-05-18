@@ -209,6 +209,6 @@ def test_request_detail(request, pk):
 
 @login_required
 def analyst_dashboard(request):
-    analyst = request.user.analyst 
+    analyst = request.user is_analyst 
     assignments = TestAssignment.objects.filter(assigned_to=analyst)
     return render(request, 'samples/analyst_dashboard.html', {'assignments': assignments})

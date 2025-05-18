@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Equipment Log #{{ log.pk }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h2 { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #333; padding: 8px; }
+    th { background-color: #eee; }
+  </style>
+</head>
+<body>
+  <h2>Equipment Usage Log</h2>
+  <table>
+    <tr><th>Equipment</th><td>{{ log.get_equipment_name_display }}</td></tr>
+    <tr><th>Analyst</th><td>{{ log.analyst }}</td></tr>
+    <tr><th>Start Time</th><td>{{ log.start_time|date:"Y-m-d H:i" }}</td></tr>
+    <tr><th>End Time</th><td>{{ log.end_time|date:"Y-m-d H:i" }}</td></tr>
+    <tr><th>Hours Worked</th><td>{{ log.hours_worked }}</td></tr>
+    <tr><th>Status</th><td>{{ log.get_status_display }}</td></tr>
+    <tr><th>Signed By</th><td>{{ log.signed_by }}</td></tr>
+    <tr><th>Reviewed By</th><td>{{ log.reviewed_by }}</td></tr>
+  </table>
+</body>
+</html>

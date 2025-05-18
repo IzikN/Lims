@@ -4,6 +4,49 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.core.validators import MinValueValidator
 
+from django.db import models
+from django.contrib.auth.models import User
+from django.utils import timezone
+
+class EquipmentLog(models.Model):
+    EQUIPMENT_CHOICES = [
+        ('fibertec', 'Fibertec'),
+        ('kjeltec_8200', 'Kjeltec 8200'),
+        ('kjeltec_8400', 'Kjeltec 8400'),
+        ('moisture_analyzer', 'Moisture Analyzer'),
+        ('furnace', 'Furnace'),
+        ('oven', 'Oven'),
+        ('centrifuge', 'Centrifuge'),
+        ('digestor', 'Digestor'),
+    ]
+
+    STATUS_CHOICES = [
+        ('working', 'Working'),
+        ('maintenance', 'Maintenance'),
+        ('broken', 'Broken'),
+        ('idle', 'Idle'),
+    ]
+
+    equipment_name = models.CharField(max_length=50, choices=EQUIPMENT_CHOICES)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    hours_worked = models.DecimalField(max_digits=5, decimal_places=2, editable=False)
+    analyst = models.CharField(max_length=50, choices=[('analyst_a', 'Analyst A'), ('analyst_b', 'Analyst B'), ('analyst_c', 'Analyst C')])
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    signed_by = models.CharField(max_length=100)
+    reviewed_by = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # Calculate hours_worked automatically (in decimal hours)
+        delta = self.end_time - self.start_time
+        self.hours_worked = round(delta.total_seconds() / 3600, 2)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.get_equipment_name_display()} - {self.analyst} on {self.start_time.strftime('%Y-%m-%d')}"
+
+
 class Reagent(models.Model):
     UNIT_CHOICES = [
         ('mL', 'Milliliter'),
@@ -30,7 +73,7 @@ class Reagent(models.Model):
     storage_location = models.CharField(max_length=100)
     safety_data_sheet = models.FileField(upload_to='sds/', blank=True, null=True)  # Added
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    last_updated = models.DateTimeField(auto_now=True)  # Added
+    date_added = models.DateTimeField(default=timezone.now)
 
     def is_expired(self):
         return self.expiry_date < timezone.now().date()
@@ -74,7 +117,7 @@ class Equipment(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='working')  # Enhanced
     maintenance_notes = models.TextField(blank=True)  # Added
     added_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    last_updated = models.DateTimeField(auto_now=True)  # Added
+    date_added = models.DateTimeField(default=timezone.now)
 
     def is_due_for_calibration(self):
         return self.next_calibration_due <= timezone.now().date()

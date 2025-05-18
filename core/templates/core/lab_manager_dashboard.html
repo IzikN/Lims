@@ -43,10 +43,10 @@
     <div class="col-md-3">
       <select name="status" class="form-select">
         <option value="">Filter by Status</option>
-        <option value="assigned">Assigned</option>
-        <option value="in_progress">In Progress</option>
-        <option value="submitted">Submitted</option>
-        <option value="completed">Completed</option>
+        <option value="assigned" {% if request.GET.status == 'assigned' %}selected{% endif %}>Assigned</option>
+        <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="submitted" {% if request.GET.status == 'submitted' %}selected{% endif %}>Submitted</option>
+        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
       </select>
     </div>
     <div class="col-md-2">
@@ -99,7 +99,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     const ctx = document.getElementById('testChart').getContext('2d');
-    new Chart(ctx, {
+    const testChart = new Chart(ctx, {
       type: 'bar',
       data: {
         labels: ['Assigned', 'In Progress', 'Submitted', 'Completed'],
@@ -119,7 +119,7 @@
 
   <!-- Test Types -->
   <h4 class="mt-5">Test Types</h4>
-  <ul class="list-group">
+  <ul id="test-types-list" class="list-group">
     {% for key, val in test_types.items %}
       <li class="list-group-item d-flex justify-content-between align-items-center">
         {{ key }}
@@ -130,7 +130,7 @@
 
   <!-- Expiring Reagents -->
   <h4 class="mt-4">Expiring Reagents</h4>
-  <ul class="list-group">
+  <ul id="reagents-list" class="list-group">
     {% for r in expiring_reagents %}
       <li class="list-group-item">{{ r.name }} ({{ r.expiry_date }})</li>
     {% empty %}
@@ -140,7 +140,7 @@
 
   <!-- Calibration Due -->
   <h4 class="mt-4">Equipment Calibration Due</h4>
-  <ul class="list-group">
+  <ul id="calibration-list" class="list-group">
     {% for e in calibration_due %}
       <li class="list-group-item">{{ e.name }} – due {{ e.next_calibration_date }}</li>
     {% empty %}
@@ -149,4 +149,53 @@
   </ul>
 
 </div>
+
+<script>
+  function fetchDashboardData() {
+    fetch("{% url 'intake_dashboard' %}")
+      .then(response => response.json())
+      .then(data => {
+        // Update counts
+        document.querySelector('.card-body.text-primary h5').textContent = data.total_samples;
+        document.querySelector('.card-body.text-warning h5').textContent = data.pending;
+        document.querySelector('.card-body.text-info h5').textContent = data.in_progress;
+        document.querySelector('.card-body.text-success h5').textContent = data.completed;
+
+        // Update chart
+        testChart.data.datasets[0].data = [
+          data.assigned, data.in_progress, data.submitted, data.completed
+        ];
+        testChart.update();
+
+        // Update test types list
+        const testList = document.getElementById('test-types-list');
+        if (testList) {
+          testList.innerHTML = '';
+          for (const [key, value] of Object.entries(data.test_types)) {
+            testList.innerHTML += `
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                ${key}
+                <span class="badge bg-primary rounded-pill">${value}</span>
+              </li>`;
+          }
+        }
+
+        // Update expiring reagents
+        const reagentList = document.getElementById('reagents-list');
+        reagentList.innerHTML = data.expiring_reagents.length > 0 ?
+          data.expiring_reagents.map(r => `<li class="list-group-item">${r.name} (${r.expiry_date})</li>`).join('') :
+          '<li class="list-group-item">All reagents are up-to-date</li>';
+
+        // Update calibration due
+        const calibrationList = document.getElementById('calibration-list');
+        calibrationList.innerHTML = data.calibration_due.length > 0 ?
+          data.calibration_due.map(e => `<li class="list-group-item">${e.name} – due ${e.next_calibration_date}</li>`).join('') :
+          '<li class="list-group-item">All equipment calibrated</li>';
+      });
+  }
+
+  // Fetch every 60 seconds
+  setInterval(fetchDashboardData, 60000);
+</script>
+
 {% endblock %}

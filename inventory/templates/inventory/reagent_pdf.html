@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #444; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        h2 { text-align: center; }
+    </style>
+</head>
+<body>
+    <h2>Reagent List</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Status</th>
+                <th>Added By</th>
+                <th>Date Added</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in reagents %}
+            <tr>
+                <td>{{ r.name }}</td>
+                <td>{{ r.quantity }}</td>
+                <td>{{ r.unit }}</td>
+                <td>{{ r.status }}</td>
+                <td>{{ r.added_by }}</td>
+                <td>{{ r.date_added }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
