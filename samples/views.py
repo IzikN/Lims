@@ -1,20 +1,75 @@
 from django.contrib.auth.decorators import user_passes_test, login_required
-from django.shortcuts import render
-from .models import TestRequest
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .models import TestRequest, Client
-from .models import Sample
-from django.shortcuts import render, redirect
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
 from .models import Client, TestRequest, Sample
 from django.utils import timezone
+from .forms import TestAssignmentForm
+from .models import TestAssignment
+from .forms import SubmitResultForm 
+
+@login_required
+def start_test(request, pk):
+    assignment = get_object_or_404(TestAssignment, pk=pk, analyst=request.user)
+
+    if assignment.status != 'assigned':
+        messages.warning(request, "This test cannot be started.")
+        return redirect('analyst_dashboard')
+
+    assignment.status = 'in_progress'
+    assignment.save()
+    messages.success(request, f"Started test for Sample {assignment.sample.sample_id}.")
+    return redirect('analyst_dashboard')
+
+
+@login_required
+def submit_test_result(request, pk):
+    assignment = get_object_or_404(TestAssignment, pk=pk, analyst=request.user)
+
+    if request.method == 'POST':
+        form = SubmitResultForm(request.POST, instance=assignment)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.status = 'submitted'
+            assignment.save()
+            messages.success(request, f"Result for {assignment.sample.sample_id} submitted.")
+            return redirect('analyst_dashboard')
+    else:
+        form = SubmitResultForm(instance=assignment)
+
+    return render(request, 'samples/submit_result.html', {'form': form, 'assignment': assignment})
+
+@login_required
+def assign_test_view(request):
+    client_id = request.GET.get('client_id')
+    form = None
+    samples = None
+
+    if client_id:
+        # Get Client object by client_id string field
+        client = get_object_or_404(Client, client_id=client_id)
+        samples = Sample.objects.filter(client=client)
+
+        if request.method == 'POST':
+            form = TestAssignmentForm(request.POST, client_id=client_id)
+            if form.is_valid():
+                form.save()
+                # Redirect back with same client_id to continue assignments
+                return redirect(f"{request.path}?client_id={client_id}")
+        else:
+            form = TestAssignmentForm(client_id=client_id)
+    else:
+        form = None
+
+    return render(request, 'samples/assign_test.html', {
+        'form': form,
+        'client_id': client_id,
+        'samples': samples,
+    })
 
 def generate_unique_client_id():
-    prefix = "JGLSP"  # or your desired prefix
-    number = 2500     # starting number
+    prefix = "JGLSP"  
+    number = 2500     
 
     while True:
         client_id = f"{prefix}{number}"
@@ -151,3 +206,9 @@ def test_request_detail(request, pk):
     test_request = get_object_or_404(TestRequest, pk=pk)
     return render(request, 'samples/test_request_detail.html', {'test_request': test_request})
 
+
+@login_required
+def analyst_dashboard(request):
+    analyst = request.user.analyst 
+    assignments = TestAssignment.objects.filter(assigned_to=analyst)
+    return render(request, 'samples/analyst_dashboard.html', {'assignments': assignments})

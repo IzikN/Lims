@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'samples',
     'inventory',
     'core',
+    'widget_tweaks',
 ]
 
 MIDDLEWARE = [

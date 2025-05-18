@@ -5,104 +5,107 @@
 {% block content %}
 <div class="container mt-5">
 
-    <div class="mb-4 text-center">
-        <h2 class="fw-bold">
-            👋 Welcome, <span class="text-primary">{{ request.user.first_name|default:request.user.username }}</span> (Analyst)
-        </h2>
-        <p class="text-muted">Here's a summary of your assigned test activities</p>
+  <div class="mb-4 text-center">
+    <h2 class="fw-bold">
+      👋 Welcome, <span class="text-primary">{{ request.user.first_name|default:request.user.username }}</span>
+    </h2>
+    <p class="text-muted">Here's a summary of your assigned test activities</p>
+  </div>
+
+  <div class="card shadow-sm mb-5 border-info">
+    <div class="card-header bg-info text-white">
+      <h3 class="mb-0">
+        <i class="fas fa-clipboard-list me-2"></i> Assigned Tests
+        <span class="badge bg-light text-dark float-end">{{ assignments|length }}</span>
+      </h3>
     </div>
 
-    <div class="card shadow-sm mb-5 border-info">
-        <div class="card-header bg-info text-white">
-            <h3 class="mb-0">
-                <i class="fas fa-clipboard-list me-2"></i>Assigned Tests
-                <span class="badge bg-light text-dark float-end">{{ assignments.count }} total</span>
-            </h3>
-        </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-4">Sample ID</th>
+              <th>Test Type</th>
+              <th>Status</th>
+              <th class="text-end pe-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in assignments %}
+            <tr>
+              <td class="ps-4 fw-semibold">{{ a.sample.sample_id }}</td>
 
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-4">Sample ID</th>
-                            <th>Test Type</th>
-                            <th>Status</th>
-                            <th class="text-end pe-4">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for a in assignments %}
-                        <tr>
-                            <td class="ps-4 fw-semibold">{{ a.sample.sample_id }}</td>
-                            <td>
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm me-2">
-                                        <span class="avatar-title bg-light-info text-info rounded-circle">
-                                            <i class="fas fa-vial"></i>
-                                        </span>
-                                    </div>
-                                    {{ a.get_test_type_display }}
-                                </div>
-                            </td>
-                            <td>
-                                {% if a.status == 'assigned' %}
-                                    <span class="badge bg-secondary">Assigned</span>
-                                {% elif a.status == 'in_progress' %}
-                                    <span class="badge bg-warning text-dark">In Progress</span>
-                                {% elif a.status == 'submitted' %}
-                                    <span class="badge bg-primary">Submitted</span>
-                                {% else %}
-                                    <span class="badge bg-success">Completed</span>
-                                {% endif %}
-                            </td>
-                            <td class="text-end pe-4">
-                                {% if a.status == 'assigned' %}
-                                    <form method="post" action="{% url 'start_test' a.id %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button class="btn btn-sm btn-outline-warning">
-                                            <i class="fas fa-play-circle me-1"></i>Start
-                                        </button>
-                                    </form>
-                                {% elif a.status == 'in_progress' %}
-                                    <a href="{% url 'submit_result' a.id %}" class="btn btn-sm btn-outline-success">
-                                        <i class="fas fa-check-circle me-1"></i>Submit
-                                    </a>
-                                {% else %}
-                                    <span class="text-muted small">
-                                        <i class="fas fa-check-double me-1"></i>Completed
-                                    </span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="4" class="text-center py-4">
-                                <div class="text-muted">
-                                    <i class="fas fa-clipboard-check fa-2x mb-3"></i>
-                                    <h5>No tests assigned</h5>
-                                    <p class="mb-0">All tests are completed or not yet assigned.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card-footer bg-light">
-            <div class="d-flex justify-content-between align-items-center">
-                <small class="text-muted">Last updated: {% now "DATETIME_FORMAT" %}</small>
-                <div class="legend">
-                    <span class="badge bg-secondary me-2">Assigned</span>
-                    <span class="badge bg-warning text-dark me-2">In Progress</span>
-                    <span class="badge bg-primary me-2">Submitted</span>
-                    <span class="badge bg-success">Completed</span>
+              <td>
+                <div class="d-flex align-items-center">
+                  <div class="avatar-sm me-2">
+                    <span class="avatar-title bg-light rounded-circle">
+                      <i class="fas fa-vial"></i>
+                    </span>
+                  </div>
+                  {{ a.get_test_type_display }}
                 </div>
-            </div>
-        </div>
+              </td>
+
+              <td>
+                {% if a.status == 'assigned' %}
+                  <span class="badge bg-secondary">Assigned</span>
+                {% elif a.status == 'in_progress' %}
+                  <span class="badge bg-warning text-dark">In Progress</span>
+                {% elif a.status == 'submitted' %}
+                  <span class="badge bg-primary">Submitted</span>
+                {% else %}
+                  <span class="badge bg-success">Completed</span>
+                {% endif %}
+              </td>
+
+              <td class="text-end pe-4">
+                {% if a.status == 'assigned' %}
+                  <form method="post" action="{% url 'start_test' a.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                      <i class="fas fa-play-circle me-1"></i> Start Test
+                    </button>
+                  </form>
+                {% elif a.status == 'in_progress' %}
+                  <a href="{% url 'submit_test_result' a.pk %}" class="btn btn-sm btn-outline-success">
+                    <i class="fas fa-check-circle me-1"></i> Submit Result
+                  </a>
+                {% else %}
+                  <span class="text-muted small">
+                    <i class="fas fa-check-double me-1"></i> Done
+                  </span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="4" class="text-center py-4">
+                <div class="text-muted">
+                  <i class="fas fa-clipboard-check fa-2x"></i>
+                  <h5>No tests assigned</h5>
+                  <p class="mb-0">All tests are completed or none have been assigned.</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+
+    <div class="card-footer bg-light">
+      <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted">Last updated: {% now "DATETIME_FORMAT" %}</small>
+        <div class="legend">
+          <span class="badge bg-secondary me-2">Assigned</span>
+          <span class="badge bg-warning text-dark me-2">In Progress</span>
+          <span class="badge bg-primary me-2">Submitted</span>
+          <span class="badge bg-success">Completed</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div>
 {% endblock %}

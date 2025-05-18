@@ -1,66 +1,82 @@
 {% extends 'base.html' %}
-{% load static %}
+
 {% block content %}
-<div class="container mt-5">
+<h2>Assign Tests to Analysts</h2>
 
-  <!-- Notification Messages -->
-  {% if messages %}
-    {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-      </div>
-    {% endfor %}
-  {% endif %}
+<form method="get" action="">
+    <label for="client_id">Enter Client ID:</label>
+    <input type="text" id="client_id" name="client_id" value="{{ client_id|default:'' }}">
+    <button type="submit">Load Samples</button>
+</form>
 
-  <h3 class="mb-4">Assign Test to Analyst</h3>
+{% if client_id %}
+    <h3>Samples for Client ID: {{ client_id }}</h3>
+    {% if samples %}
+        <ul>
+        {% for sample in samples %}
+            <li>{{ sample.sample_id }}</li>
+        {% endfor %}
+        </ul>
 
-  <!-- Sample Info Card -->
-  <div class="card mb-4 border-info">
-    <div class="card-body">
-      <h5 class="card-title">Sample: {{ sample.name }}</h5>
-      <p class="card-text">
-        <strong>ID:</strong> {{ sample.id }} <br>
-        <strong>Status:</strong> {{ sample.status|capfirst }} <br>
-        <strong>Received On:</strong> {{ sample.date_received }}
-      </p>
-    </div>
-  </div>
+        <h3>Assign Test</h3>
+        <form method="post" action="?client_id={{ client_id }}">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
 
-  <!-- Assignment Form -->
-  <div class="card">
-    <div class="card-body">
-      <form method="POST">
-        {% csrf_token %}
-        <div class="mb-3">
-          <label for="test_type" class="form-label">Select Test Type</label>
-          <select class="form-select" name="test_type" required>
-            <option value="" disabled selected>Choose...</option>
-            <option value="Proximate">Proximate</option>
-            <option value="Gross Energy">Gross Energy</option>
-            <option value="Aflatoxin">Aflatoxin</option>
-            <option value="Moisture Content">Moisture Content</option>
-            <!-- Add more if needed -->
-          </select>
-        </div>
+            <div>
+                {{ form.sample.label_tag }}<br>
+                {{ form.sample }}
+                {{ form.sample.errors }}
+            </div>
 
-        <div class="mb-3">
-          <label for="analyst" class="form-label">Assign to Analyst</label>
-          <select class="form-select" name="analyst" required>
-            <option value="" disabled selected>Choose analyst...</option>
-            {% for analyst in analysts %}
-              <option value="{{ analyst.id }}">{{ analyst.get_full_name }}</option>
-            {% endfor %}
-          </select>
-        </div>
+            <div>
+                {{ form.test_parameter.label_tag }}<br>
+                {{ form.test_parameter }}
+                {{ form.test_parameter.errors }}
+            </div>
 
-        <div class="text-end">
-          <a href="{% url 'intake_dashboard' %}" class="btn btn-secondary me-2">Cancel</a>
-          <button type="submit" class="btn btn-primary">Assign Test</button>
-        </div>
-      </form>
-    </div>
-  </div>
+            <div id="sub_param_div">
+                {{ form.sub_parameter.label_tag }}<br>
+                {{ form.sub_parameter }}
+                {{ form.sub_parameter.errors }}
+            </div>
 
-</div>
+            <div>
+                {{ form.analyst.label_tag }}<br>
+                {{ form.analyst }}
+                {{ form.analyst.errors }}
+            </div>
+
+            <div>
+                {{ form.deadline.label_tag }}<br>
+                {{ form.deadline }}
+                {{ form.deadline.errors }}
+            </div>
+
+            <button type="submit">Assign Test</button>
+        </form>
+
+    {% else %}
+        <p>No samples found for this client ID.</p>
+    {% endif %}
+{% endif %}
+
+<script>
+    const testParamSelect = document.getElementById("id_test_parameter");
+    const subParamDiv = document.getElementById("sub_param_div");
+
+    function toggleSubParam() {
+        if (testParamSelect.value === "proximate") {
+            subParamDiv.style.display = "block";
+        } else {
+            subParamDiv.style.display = "none";
+            document.getElementById("id_sub_parameter").value = "";
+        }
+    }
+
+    testParamSelect.addEventListener("change", toggleSubParam);
+    // Initial call to set visibility on page load
+    toggleSubParam();
+</script>
+
 {% endblock %}

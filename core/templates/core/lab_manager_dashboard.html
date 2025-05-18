@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block content %}
 <div class="container mt-4">
 
@@ -15,7 +16,7 @@
   <!-- Greeting -->
   <div class="alert alert-info d-flex align-items-center" role="alert">
     <i class="fas fa-user-md me-2"></i>
-    <strong>Welcome back, {{ user.first_name|default:"Lab Manager" }}!</strong> Ready to make the lab run smoother today?
+    <strong>Welcome back, {{ user.first_name|default:"Lab Manager" }}!</strong>
   </div>
 
   <!-- Quick Access Buttons -->
@@ -23,19 +24,37 @@
     <a href="{% url 'intake_dashboard' %}" class="btn btn-outline-primary">
       <i class="fas fa-warehouse me-1"></i> Intake Dashboard
     </a>
+    <a href="{% url 'assign_tests' %}" class="btn btn-outline-danger">
+      <i class="fas fa-tasks me-1"></i> Assign Tests
+    </a>
     <a href="{% url 'reagent_list' %}" class="btn btn-outline-secondary">
       <i class="fas fa-flask me-1"></i> View Reagents
-    </a>
-    <a href="{% url 'add_reagent' %}" class="btn btn-outline-secondary">
-      <i class="fas fa-plus-circle me-1"></i> Add Reagent
     </a>
     <a href="{% url 'equipment_list' %}" class="btn btn-outline-success">
       <i class="fas fa-cogs me-1"></i> View Equipment
     </a>
-    <a href="{% url 'add_equipment' %}" class="btn btn-outline-success">
-      <i class="fas fa-plus-circle me-1"></i> Add Equipment
-    </a>
   </div>
+
+  <!-- Filter/Search -->
+  <form method="get" class="row g-2 mb-4">
+    <div class="col-md-4">
+      <input type="text" name="q" class="form-control" placeholder="Search by Sample ID or Client ID..." value="{{ request.GET.q }}">
+    </div>
+    <div class="col-md-3">
+      <select name="status" class="form-select">
+        <option value="">Filter by Status</option>
+        <option value="assigned">Assigned</option>
+        <option value="in_progress">In Progress</option>
+        <option value="submitted">Submitted</option>
+        <option value="completed">Completed</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary w-100">
+        <i class="fas fa-search me-1"></i> Search
+      </button>
+    </div>
+  </form>
 
   <!-- Summary Cards -->
   <div class="row text-center">
@@ -73,16 +92,33 @@
     </div>
   </div>
 
-  <!-- Helpful Writeup -->
-  <div class="mt-4">
-    <p class="lead">
-      Monitor reagent stock levels, equipment calibration, and sample progress with ease.
-      Only unassigned samples will appear in your assignment view to avoid duplication. Keep things flowing smoothly!
-    </p>
-  </div>
+  <!-- Chart Section -->
+  <h4 class="mt-4">Assignment Overview</h4>
+  <canvas id="testChart" height="100"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const ctx = document.getElementById('testChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Assigned', 'In Progress', 'Submitted', 'Completed'],
+        datasets: [{
+          label: 'Test Assignments',
+          data: [{{ assigned }}, {{ in_progress }}, {{ submitted }}, {{ completed }}],
+          backgroundColor: ['#6c757d', '#ffc107', '#0d6efd', '#198754']
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  </script>
 
   <!-- Test Types -->
-  <h4 class="mt-4">Test Types</h4>
+  <h4 class="mt-5">Test Types</h4>
   <ul class="list-group">
     {% for key, val in test_types.items %}
       <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -106,7 +142,7 @@
   <h4 class="mt-4">Equipment Calibration Due</h4>
   <ul class="list-group">
     {% for e in calibration_due %}
-      <li class="list-group-item">{{ e.name }} – due {{ e.next_calibration_due }}</li>
+      <li class="list-group-item">{{ e.name }} – due {{ e.next_calibration_date }}</li>
     {% empty %}
       <li class="list-group-item">All equipment calibrated</li>
     {% endfor %}
