@@ -5,8 +5,8 @@ from django.contrib import messages
 from .models import Client, TestRequest, Sample
 from django.utils import timezone
 from .forms import TestAssignmentForm
-from .models import TestAssignment
 from .forms import SubmitResultForm 
+from .models import TestAssignment, AnalystProfile
 
 @login_required
 def start_test(request, pk):
@@ -207,8 +207,16 @@ def test_request_detail(request, pk):
     return render(request, 'samples/test_request_detail.html', {'test_request': test_request})
 
 
+
 @login_required
 def analyst_dashboard(request):
-    analyst = request.user is_analyst 
-    assignments = TestAssignment.objects.filter(assigned_to=analyst)
-    return render(request, 'samples/analyst_dashboard.html', {'assignments': assignments})
+    # Check if user is in 'Analyst' group
+    if not request.user.groups.filter(name='Analyst').exists():
+        return redirect('unauthorized')  # You can create a simple page
+
+    analyst_profile = AnalystProfile.objects.get(user=request.user)
+    assignments = TestAssignment.objects.filter(analyst=analyst_profile)
+
+    return render(request, 'samples/analyst_dashboard.html', {
+        'assignments': assignments
+    })

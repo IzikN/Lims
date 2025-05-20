@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.db import models
+from django.conf import settings
 
 
 class AnalystProfile(models.Model):
@@ -105,7 +107,8 @@ class TestAssignment(models.Model):
     sub_parameter = models.CharField(max_length=30, blank=True, null=True)
     deadline = models.DateField()
     result = models.TextField(blank=True, null=True)
+
     def __str__(self):
         if self.test_parameter == 'proximate':
-            return f"{self.sample.sample_id} - {self.sub_parameter} assigned to {self.analyst.full_name}"
-        return f"{self.sample.sample_id} - {self.test_parameter} assigned to {self.analyst.full_name}"
+            return f"{self.sample.sample_id} - {self.sub_parameter} assigned"
+        return f"{self.sample.sample_id} - {self.test_parameter} assigned"

@@ -3,13 +3,13 @@ from django.contrib.auth.decorators import login_required
 from .models import Reagent, Equipment
 from .forms import ReagentForm, EquipmentForm
 from django.contrib import messages
-from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4
+#from reportlab.pdfgen import canvas
+#from reportlab.lib.pagesizes import A4
 from .forms import ReagentFilterForm
 from .forms import EquipmentFilterForm
 import csv
 from django.template.loader import get_template
-from xhtml2pdf import pisa
+#from xhtml2pdf import pisa
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import EquipmentLog
@@ -17,7 +17,7 @@ from .forms import EquipmentLogForm
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.template.loader import render_to_string
-import pdfkit
+#import pdfkit
 
 def equipment_log_create(request):
     if request.method == 'POST':
@@ -36,54 +36,54 @@ def equipment_log_list(request):
     page_obj = paginator.get_page(page_number)
     return render(request, 'inventory/equipment_log_list.html', {'page_obj': page_obj})
 
-def equipment_log_pdf(request, pk):
-    log = get_object_or_404(EquipmentLog, pk=pk)
-    html = render_to_string('equipment_log_pdf.html', {'log': log})
+#def equipment_log_pdf(request, pk):
+ #   log = get_object_or_404(EquipmentLog, pk=pk)
+  #  html = render_to_string('equipment_log_pdf.html', {'log': log})
     
     # Configure pdfkit (you may need to adjust the path to wkhtmltopdf)
-    options = {
-        'page-size': 'A4',
-        'encoding': "UTF-8",
-    }
-    pdf = pdfkit.from_string(html, False, options=options)
-    response = HttpResponse(pdf, content_type='application/pdf')
-    response['Content-Disposition'] = f'inline; filename="equipment_log_{log.pk}.pdf"'
-    return response
+#    options = {
+ #       'page-size': 'A4',
+  #      'encoding': "UTF-8",
+   # }
+#    pdf = pdfkit.from_string(html, False, options=options)
+ #   response = HttpResponse(pdf, content_type='application/pdf')
+#    response['Content-Disposition'] = f'inline; filename="equipment_log_{log.pk}.pdf"'
+ #   return response
 
 
-def export_reagent_pdf(request):
-    reagents = Reagent.objects.all()
-    template_path = 'inventory/reagent_pdf.html'
-    context = {'reagents': reagents}
+#def export_reagent_pdf(request):
+ #   reagents = Reagent.objects.all()
+  #  template_path = 'inventory/reagent_pdf.html'
+   # context = {'reagents': reagents}
 
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="reagent_list.pdf"'
+#    response = HttpResponse(content_type='application/pdf')
+ #   response['Content-Disposition'] = 'attachment; filename="reagent_list.pdf"'
 
-    template = get_template(template_path)
-    html = template.render(context)
-    pisa_status = pisa.CreatePDF(html, dest=response)
+#    template = get_template(template_path)
+#    html = template.render(context)
+ #   pisa_status = pisa.CreatePDF(html, dest=response)
 
-    if pisa_status.err:
-        return HttpResponse('Error generating PDF', status=500)
-    return response
+#    if pisa_status.err:
+#        return HttpResponse('Error generating PDF', status=500)
+ #   return response
 
 
 
-def export_equipment_pdf(request):
-    equipments = Equipment.objects.all()
-    template_path = 'inventory/equipment_pdf.html'
-    context = {'equipments': equipments}
+#def export_equipment_pdf(request):
+ #   equipments = Equipment.objects.all()
+  #  template_path = 'inventory/equipment_pdf.html'
+   # context = {'equipments': equipments}
     
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="equipment_list.pdf"'
+    #response = HttpResponse(content_type='application/pdf')
+#    response['Content-Disposition'] = 'attachment; filename="equipment_list.pdf"'
 
-    template = get_template(template_path)
-    html = template.render(context)
-    pisa_status = pisa.CreatePDF(html, dest=response)
+ #   template = get_template(template_path)
+#    html = template.render(context)
+ #   pisa_status = pisa.CreatePDF(html, dest=response)
 
-    if pisa_status.err:
-        return HttpResponse('Error generating PDF', status=500)
-    return response
+  #  if pisa_status.err:
+   #     return HttpResponse('Error generating PDF', status=500)
+    #return response
 
 
 def export_equipment_csv(request):
