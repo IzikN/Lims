@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Review Test Assignment</h2>
+
+  <div class="card mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Test: {{ assignment.test_parameter|title }}{% if assignment.sub_parameter %} - {{ assignment.sub_parameter|title }}{% endif %}</h5>
+      <p><strong>Sample(s):</strong> {{ assignment.samples.all|join:", " }}</p>
+      <p><strong>Analyst:</strong> {{ assignment.analyst.user.get_full_name }}</p>
+      <p><strong>Result:</strong></p>
+      <pre class="bg-light p-3 border rounded">{{ assignment.result }}</pre>
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="comments" class="form-label">Review Comments</label>
+      <textarea name="comments" id="comments" rows="4" class="form-control">{{ assignment.review_comments }}</textarea>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" name="action" value="approve" class="btn btn-success">
+        <i class="fas fa-check"></i> Approve
+      </button>
+      <button type="submit" name="action" value="reject" class="btn btn-danger">
+        <i class="fas fa-times"></i> Reject
+      </button>
+      <a href="{% url 'result_overview' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

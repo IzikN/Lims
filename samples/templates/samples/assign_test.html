@@ -1,82 +1,115 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2>Assign Tests to Analysts</h2>
+<h2 style="text-align: center; color: #004080; margin-bottom: 20px;">Assign Test to Analyst</h2>
 
-<form method="get" action="">
-    <label for="client_id">Enter Client ID:</label>
-    <input type="text" id="client_id" name="client_id" value="{{ client_id|default:'' }}">
-    <button type="submit">Load Samples</button>
+{% if client_id and samples %}
+<form method="POST" style="max-width: 800px; margin: 0 auto;">
+  {% csrf_token %}
+
+  <div style="margin-bottom: 20px;">
+    <label>Select Sample(s):</label>
+    <select name="samples" multiple required style="width: 100%; padding: 10px;">
+      {% for sample in samples %}
+        <option value="{{ sample.id }}">{{ sample.sample_id }}</option>
+      {% endfor %}
+    </select>
+    <small>Hold Ctrl or Cmd to select multiple samples.</small>
+  </div>
+
+  <div id="test-blocks">
+    <div class="test-block" style="border: 1px solid #ccc; padding: 15px; margin-bottom: 15px;">
+      <label>Test Parameter:</label>
+      <select name="test_parameter[]" class="test-parameter" style="width: 100%; padding: 10px;" required onchange="toggleSubParameter(this)">
+        <option value="">Select test</option>
+        <option value="proximate">Proximate</option>
+        <option value="aflatoxin">Aflatoxin</option>
+        <option value="gross_energy">Gross Energy</option>
+        <option value="moisture">Moisture</option>
+      </select>
+
+      <div class="sub-parameter-group" style="display: none; margin-top: 10px;">
+        <label>Sub-Parameter:</label>
+        <select name="sub_parameter[]" style="width: 100%; padding: 10px;">
+          <option value="">Select sub-parameter</option>
+          <option value="ash">Ash</option>
+          <option value="fiber">Fiber</option>
+          <option value="protein">Protein</option>
+          <option value="moisture">Moisture</option>
+          <option value="fat">Fat</option>
+        </select>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <label>Assign Analyst:</label>
+        <select name="analyst[]" style="width: 100%; padding: 10px;" required>
+          {% for analyst in analysts %}
+            <option value="{{ analyst.id }}">{{ analyst.full_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="margin-top: 10px;">
+        <label>Deadline:</label>
+        <input type="date" name="deadline[]" class="deadline" required style="width: 100%; padding: 10px;">
+      </div>
+    </div>
+  </div>
+
+  <button type="button" onclick="addTestBlock()" style="margin-bottom: 20px; padding: 10px 15px;">+ Add Another Test</button>
+
+  <div style="text-align: center;">
+    <button type="submit" style="padding: 10px 20px; background-color: green; color: white;">Submit</button>
+    <a href="{% url 'intake_dashboard' %}" style="margin-left: 10px;">Cancel</a>
+  </div>
 </form>
-
-{% if client_id %}
-    <h3>Samples for Client ID: {{ client_id }}</h3>
-    {% if samples %}
-        <ul>
-        {% for sample in samples %}
-            <li>{{ sample.sample_id }}</li>
-        {% endfor %}
-        </ul>
-
-        <h3>Assign Test</h3>
-        <form method="post" action="?client_id={{ client_id }}">
-            {% csrf_token %}
-            {{ form.non_field_errors }}
-
-            <div>
-                {{ form.sample.label_tag }}<br>
-                {{ form.sample }}
-                {{ form.sample.errors }}
-            </div>
-
-            <div>
-                {{ form.test_parameter.label_tag }}<br>
-                {{ form.test_parameter }}
-                {{ form.test_parameter.errors }}
-            </div>
-
-            <div id="sub_param_div">
-                {{ form.sub_parameter.label_tag }}<br>
-                {{ form.sub_parameter }}
-                {{ form.sub_parameter.errors }}
-            </div>
-
-            <div>
-                {{ form.analyst.label_tag }}<br>
-                {{ form.analyst }}
-                {{ form.analyst.errors }}
-            </div>
-
-            <div>
-                {{ form.deadline.label_tag }}<br>
-                {{ form.deadline }}
-                {{ form.deadline.errors }}
-            </div>
-
-            <button type="submit">Assign Test</button>
-        </form>
-
-    {% else %}
-        <p>No samples found for this client ID.</p>
-    {% endif %}
+{% else %}
+<p style="text-align: center;">No client selected or no samples available.</p>
 {% endif %}
 
 <script>
-    const testParamSelect = document.getElementById("id_test_parameter");
-    const subParamDiv = document.getElementById("sub_param_div");
+  function setDefaultDeadlines() {
+    const inputs = document.querySelectorAll('.deadline');
+    const date = new Date();
+    date.setDate(date.getDate() + 3);
+    const defaultDate = date.toISOString().split('T')[0];
+    inputs.forEach(input => input.value = defaultDate);
+  }
 
-    function toggleSubParam() {
-        if (testParamSelect.value === "proximate") {
-            subParamDiv.style.display = "block";
-        } else {
-            subParamDiv.style.display = "none";
-            document.getElementById("id_sub_parameter").value = "";
-        }
+  function addTestBlock() {
+    const first = document.querySelector('.test-block');
+    const clone = first.cloneNode(true);
+
+    clone.querySelectorAll('select, input').forEach(el => {
+      if (el.tagName === 'SELECT') el.selectedIndex = 0;
+      if (el.type === 'date') el.value = '';
+    });
+
+    // Hide sub-parameter initially
+    const subGroup = clone.querySelector('.sub-parameter-group');
+    if (subGroup) subGroup.style.display = 'none';
+
+    document.getElementById('test-blocks').appendChild(clone);
+    setDefaultDeadlines();
+  }
+
+  function toggleSubParameter(selectEl) {
+    const block = selectEl.closest('.test-block');
+    const subGroup = block.querySelector('.sub-parameter-group');
+
+    if (selectEl.value === 'proximate') {
+      subGroup.style.display = 'block';
+    } else {
+      subGroup.style.display = 'none';
+      subGroup.querySelector('select').selectedIndex = 0;
     }
+  }
 
-    testParamSelect.addEventListener("change", toggleSubParam);
-    // Initial call to set visibility on page load
-    toggleSubParam();
+  // Initialize on page load
+  window.onload = function() {
+    setDefaultDeadlines();
+    const selects = document.querySelectorAll('.test-parameter');
+    selects.forEach(s => toggleSubParameter(s));
+  };
 </script>
-
 {% endblock %}

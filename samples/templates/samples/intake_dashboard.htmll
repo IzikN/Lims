@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+{% block content %}
+
+<h2 style="color: #004080; text-align: center; margin-bottom: 20px;">Intake Dashboard - ISO 17025 Monitoring</h2>
+
+<div style="display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+  <a href="{% url 'result_overview' %}" class="btn btn-outline-primary">View Results Overview</a>
+
+  <div>
+    <strong>Total Clients:</strong> {{ total_clients }} |
+    <strong>Total Samples:</strong> {{ total_samples }} |
+    <strong>Assigned:</strong> {{ assigned_count }} |
+    <strong>Pending:</strong> {{ pending_count }} |
+    <strong>In Progress:</strong> {{ in_progress_count }} |
+    <strong>Completed:</strong> {{ completed_count }} |
+    <strong>Cancelled:</strong> {{ cancelled_count }}
+  </div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+  <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search by Client or Organization" style="flex: 2; padding: 8px;">
+  <select id="statusFilter" onchange="filterTable()" style="flex: 1; padding: 8px;">
+    <option value="">All Statuses</option>
+    <option value="pending">Pending</option>
+    <option value="in_progress">In Progress</option>
+    <option value="completed">Completed</option>
+    <option value="cancelled">Cancelled</option>
+  </select>
+  <input type="date" id="fromDate" onchange="filterTable()" style="padding: 8px;">
+  <input type="date" id="toDate" onchange="filterTable()" style="padding: 8px;">
+</div>
+
+<table id="dashboardTable" style="width: 100%; border-collapse: collapse;">
+  <thead>
+    <tr style="background-color: #004080; color: white;">
+      <th>Client Name</th>
+      <th>Organization</th>
+      <th>No. of Samples</th>
+      <th>Analyses</th>
+      <th>Status</th>
+      <th>Submission Date</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for request in test_requests %}
+    <tr style="border-bottom: 1px solid #ddd;">
+      <td>{{ request.client.name }}</td>
+      <td>{{ request.organization }}</td>
+      <td>{{ request.number_of_samples }}</td>
+      <td>
+        {% for analysis in request.analysis_types|split:"," %}
+          <span style="background-color: #e0ecff; color: #004080; padding: 3px 6px; border-radius: 4px; margin-right: 3px;">
+            {{ analysis|capfirst }}
+          </span>
+        {% endfor %}
+      </td>
+      <td data-status="{{ request.status }}">
+        <span style="
+          {% if request.status == 'pending' %}color: orange;
+          {% elif request.status == 'in_progress' %}color: blue;
+          {% elif request.status == 'completed' %}color: green;
+          {% elif request.status == 'cancelled' %}color: red;
+          {% endif %}
+          font-weight: bold;">
+          {{ request.get_status_display }}
+        </span>
+      </td>
+      <td data-date="{{ request.created_at|date:'Y-m-d' }}">{{ request.created_at|date:"M d, Y" }}</td>
+      <td>
+        <a href="{% url 'test_request_detail' request.id %}" style="color: #004080;">View</a>
+        {% if user.is_authenticated and user.role == 'lab_manager' %}
+           <a href="{% url 'assign_test' %}?client_id={{ request.client.client.id }}" style="color: green;">Assign Test</a>
+        {% endif %}
+      </td>
+    </tr>
+    {% empty %}
+    <tr>
+      <td colspan="7" style="text-align:center; padding: 15px;">No test requests found.</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+  function filterTable() {
+    const search = document.getElementById("searchInput").value.toLowerCase();
+    const status = document.getElementById("statusFilter").value;
+    const fromDate = document.getElementById("fromDate").value;
+    const toDate = document.getElementById("toDate").value;
+    const rows = document.querySelectorAll("#dashboardTable tbody tr");
+
+    rows.forEach(row => {
+      const client = row.cells[0].textContent.toLowerCase();
+      const org = row.cells[1].textContent.toLowerCase();
+      const rowStatus = row.cells[4].getAttribute("data-status");
+      const submissionDate = row.cells[5].getAttribute("data-date");
+
+      let show = true;
+
+      if (search && !client.includes(search) && !org.includes(search)) show = false;
+      if (status && rowStatus !== status) show = false;
+      if (fromDate && submissionDate < fromDate) show = false;
+      if (toDate && submissionDate > toDate) show = false;
+
+      row.style.display = show ? "" : "none";
+    });
+  }
+</script>
+
+{% endblock %}

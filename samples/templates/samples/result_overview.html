@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Test Results Overview</h2>
+
+{% if results_by_client %}
+  {% for client_id, results in results_by_client.items %}
+    <section style="margin-bottom: 2em; border-bottom: 1px solid #ccc;">
+      <h3>Client ID: {{ client_id }}</h3>
+      <table border="1" cellpadding="5" cellspacing="0" style="width:100%;">
+        <thead>
+          <tr>
+            <th>Sample ID</th>
+            <th>Test</th>
+            <th>Sub-Test</th>
+            <th>Result</th>
+            <th>Analyst</th>
+            <th>Review</th> 
+          </tr>
+        </thead>
+        <tbody>
+          {% for res in results %}
+          <tr>
+            <td>{{ res.sample_id }}</td>
+            <td>{{ res.test|title }}</td>
+            <td>{{ res.sub_test|default:"N/A"|title }}</td>
+            <td>{{ res.result|default:"Pending" }}</td>
+            <td>{{ res.analyst }}</td>
+            <td>
+            <a href="{% url 'review_test' res.assignment_id %}" class="btn btn-sm btn-outline-primary">
+             Review
+          </a>
+         </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endfor %}
+{% else %}
+  <p>No test results available.</p>
+{% endif %}
+
+{% endblock %}

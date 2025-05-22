@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3>Review Test Assignment</h3>
+
+  <div class="mb-4">
+    <h5>Assignment Details</h5>
+    <p><strong>Client ID:</strong> {{ assignment.samples.first.client_id }}</p>
+    <p><strong>Test:</strong> {{ assignment.test_parameter|capfirst }}</p>
+    <p><strong>Sub-Parameter:</strong> {{ assignment.sub_parameter|default:"N/A"|capfirst }}</p>
+    <p><strong>Analyst:</strong> {{ assignment.analyst.user.get_full_name }}</p>
+    <p><strong>Result:</strong> {{ assignment.result|default:"Pending" }}</p>
+    <p><strong>Status:</strong> {{ assignment.review_status|default:"Not reviewed" }}</p>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group mb-3">
+      <label for="comments">Comments:</label>
+      <textarea name="comments" class="form-control" rows="4" required></textarea>
+    </div>
+    <div>
+      <button type="submit" name="action" value="approve" class="btn btn-success">Approve</button>
+      <button type="submit" name="action" value="reject" class="btn btn-danger">Reject</button>
+    </div>
+  </form>
+
+  <hr>
+
+  <h5>Review History</h5>
+  {% if assignment.reviews.exists %}
+    <ul class="list-group">
+      {% for review in assignment.reviews.all %}
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+          <div class="ms-2 me-auto">
+            <div class="fw-bold">{{ review.reviewer.get_full_name|default:"Unknown" }}</div>
+            {{ review.comments }}
+            <br>
+            <small class="text-muted">{{ review.reviewed_at|date:"M d, Y - H:i A" }}</small>
+          </div>
+          {% if review.decision == 'approved' %}
+            <span class="badge bg-success rounded-pill">{{ review.decision|capfirst }}</span>
+          {% elif review.decision == 'rejected' %}
+            <span class="badge bg-danger rounded-pill">{{ review.decision|capfirst }}</span>
+          {% else %}
+            <span class="badge bg-secondary rounded-pill">{{ review.decision|capfirst }}</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No reviews yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

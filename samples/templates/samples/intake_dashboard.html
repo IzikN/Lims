@@ -1,95 +1,567 @@
 {% extends 'base.html' %}
 {% load custom_filters %}
+{% load static %}
+
 {% block content %}
-<h2 style="color: #004080; text-align: center; margin-bottom: 20px;">Intake Dashboard</h2>
+<style>
+:root {
+  --primary: #004080;
+  --primary-light: #e0ecff;
+  --secondary: #00c4cc;
+  --success: #28a745;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --info: #17a2b8;
+  --light: #f8f9fa;
+  --dark: #343a40;
+}
 
-<div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
-  <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search client or organization..." style="flex: 2; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+.dashboard-container {
+  padding: 2rem;
+  max-width: 1800px;
+  margin: 0 auto;
+}
 
-  <select id="statusFilter" onchange="filterTable()" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-    <option value="">All Statuses</option>
-    <option value="pending">Pending</option>
-    <option value="in_progress">In Progress</option>
-    <option value="completed">Completed</option>
-    <option value="cancelled">Cancelled</option>
-  </select>
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
 
-  <input type="date" id="fromDate" onchange="filterTable()" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-  <input type="date" id="toDate" onchange="filterTable()" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+.dashboard-title {
+  color: var(--primary);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.dashboard-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: 2px;
+}
+
+.stats-container {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 200px;
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 64, 128, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-left: 4px solid var(--primary);
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 64, 128, 0.12);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.filters-container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 250px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23004080' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 95% center;
+  background-size: 20px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.2);
+}
+
+.select-filter, .date-filter {
+  padding: 0.75rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+  min-width: 180px;
+}
+
+.date-filter {
+  max-width: 180px;
+}
+
+.dashboard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-table thead th {
+  background: var(--primary);
+  color: white;
+  padding: 1rem;
+  font-weight: 600;
+  text-align: left;
+  position: sticky;
+  top: 0;
+}
+
+.dashboard-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.dashboard-table tbody tr:hover {
+  background-color: rgba(0, 64, 128, 0.03);
+}
+
+.dashboard-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f1f1;
+  vertical-align: middle;
+}
+
+.analysis-tag {
+  display: inline-block;
+  background-color: var(--primary-light);
+  color: var(--primary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  margin: 0.2rem;
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-pending {
+  background-color: rgba(255, 193, 7, 0.2);
+  color: #d39e00;
+}
+
+.status-in_progress {
+  background-color: rgba(0, 123, 255, 0.2);
+  color: #0062cc;
+}
+
+.status-completed {
+  background-color: rgba(40, 167, 69, 0.2);
+  color: #218838;
+}
+
+.status-cancelled {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: #c82333;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  color: white;
+  background-color: var(--primary);
+  border: none;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  margin-right: 0.5rem;
+}
+
+.action-btn:hover {
+  background-color: #003366;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+.action-btn.secondary {
+  background-color: var(--secondary);
+}
+
+.action-btn.secondary:hover {
+  background-color: #00aab5;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  color: #dee2e6;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .stat-card {
+    min-width: 100%;
+  }
+  
+  .filters-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-input, .select-filter, .date-filter {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .dashboard-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/* Animation for status changes */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.status-updated {
+  animation: pulse 0.5s ease;
+}
+
+/* Quick actions */
+.quick-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: var(--dark);
+  border: 1px solid #dee2e6;
+}
+
+.quick-action-btn:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 64, 128, 0.1);
+}
+
+.quick-action-btn i {
+  color: var(--primary);
+}
+</style>
+
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">Lab Intake Dashboard</h1>
+    <div>
+      <a href="{% url 'result_overview' %}" class="action-btn secondary">
+        <i class="fas fa-chart-bar"></i> View Results Overview
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-container">
+    <div class="stat-card">
+      <div class="stat-value">{{ total_clients }}</div>
+      <div class="stat-label">Total Clients</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ total_samples }}</div>
+      <div class="stat-label">Total Samples</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ assigned_count }}</div>
+      <div class="stat-label">Assigned</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ pending_count }}</div>
+      <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ in_progress_count }}</div>
+      <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ completed_count }}</div>
+      <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ cancelled_count }}</div>
+      <div class="stat-label">Cancelled</div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="quick-actions">
+    <a href="#" class="quick-action-btn">
+      <i class="fas fa-plus-circle"></i> New Test Request
+    </a>
+    <a href="#" class="quick-action-btn">
+      <i class="fas fa-file-export"></i> Export Data
+    </a>
+    <a href="#" class="quick-action-btn">
+      <i class="fas fa-filter"></i> Advanced Filters
+    </a>
+    <a href="#" class="quick-action-btn">
+      <i class="fas fa-bell"></i> Set Alerts
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-container">
+    <input type="text" id="searchInput" class="search-input" onkeyup="filterTable()" placeholder="Search clients or organizations...">
+    <select id="statusFilter" class="select-filter" onchange="filterTable()">
+      <option value="">All Statuses</option>
+      <option value="pending">Pending</option>
+      <option value="in_progress">In Progress</option>
+      <option value="completed">Completed</option>
+      <option value="cancelled">Cancelled</option>
+    </select>
+    <input type="date" id="fromDate" class="date-filter" onchange="filterTable()" placeholder="From Date">
+    <input type="date" id="toDate" class="date-filter" onchange="filterTable()" placeholder="To Date">
+  </div>
+
+  <!-- Main Table -->
+  <table id="dashboardTable" class="dashboard-table">
+    <thead>
+      <tr>
+        <th>Client</th>
+        <th>Organization</th>
+        <th>Samples</th>
+        <th>Analyses</th>
+        <th>Status</th>
+        <th>Submission Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for request in test_requests %}
+      <tr>
+        <td>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <div style="width: 36px; height: 36px; border-radius: 50%; background-color: #e0ecff; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+              {{ request.client.name|first|upper }}
+            </div>
+            <div>
+              <div style="font-weight: 600;">{{ request.client.name }}</div>
+              <div style="font-size: 0.8rem; color: #6c757d;">ID: {{ request.id }}</div>
+            </div>
+          </div>
+        </td>
+        <td>{{ request.organization|default:"-" }}</td>
+        <td style="font-weight: 600; text-align: center;">{{ request.number_of_samples }}</td>
+        <td>
+          <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+            {% for analysis in request.analysis_types|split:"," %}
+              <span class="analysis-tag">{{ analysis|capfirst }}</span>
+            {% endfor %}
+          </div>
+        </td>
+        <td data-status="{{ request.status }}">
+          <span class="status-badge status-{{ request.status }}">
+            {{ request.get_status_display }}
+          </span>
+        </td>
+        <td data-date="{{ request.created_at|date:'Y-m-d' }}">
+          {{ request.created_at|date:"M d, Y" }}
+          <div style="font-size: 0.8rem; color: #6c757d;">
+            {{ request.created_at|timesince }} ago
+          </div>
+        </td>
+        <td>
+          <div style="display: flex; gap: 0.5rem;">
+            <a href="{% url 'test_request_detail' request.id %}" class="action-btn">
+              <i class="fas fa-eye"></i> View
+            </a>
+            {% if user.is_authenticated and user.role == 'lab_manager' %}
+              <a href="{% url 'assign_test' %}?client_id={{ request.client.id }}" class="action-btn secondary">
+                <i class="fas fa-user-tag"></i> Assign
+              </a>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="empty-state">
+          <i class="fas fa-flask"></i>
+          <h3>No test requests found</h3>
+          <p>When test requests are submitted, they will appear here.</p>
+          <a href="#" class="action-btn" style="margin-top: 1rem;">
+            <i class="fas fa-plus"></i> Create New Request
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 
-<table id="dashboardTable" style="width: 100%; border-collapse: collapse; font-size: 14px;">
-  <thead>
-    <tr style="background-color: #004080; color: white;">
-      <th>Client Name</th>
-      <th>Organization</th>
-      <th>No. of Samples</th>
-      <th>Analyses</th>
-      <th>Status</th>
-      <th>Submission Date</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for request in test_requests %}
-    <tr style="border-bottom: 1px solid #ddd; {% if forloop.counter|divisibleby:2 %}background-color: #f9f9f9;{% endif %}">
-      <td>{{ request.client.name }}</td>
-      <td>{{ request.organization }}</td>
-      <td>{{ request.number_of_samples }}</td>
-      <td>
-        {% for analysis in request.analysis_types|split:"," %}
-          <span style="background-color: #e0ecff; color: #004080; padding: 2px 6px; margin: 2px; border-radius: 3px; display: inline-block;">
-            {{ analysis|capfirst }}
-          </span>
-        {% endfor %}
-      </td>
-      <td data-status="{{ request.status }}">
-        <span style="
-          {% if request.status == 'pending' %}color: orange;
-          {% elif request.status == 'in_progress' %}color: blue;
-          {% elif request.status == 'completed' %}color: green;
-          {% elif request.status == 'cancelled' %}color: red;
-          {% endif %}
-          font-weight: bold;">
-          {{ request.get_status_display }}
-        </span>
-      </td>
-      <td data-date="{{ request.created_at|date:'Y-m-d' }}">{{ request.created_at|date:"Y-m-d" }}</td>
-      <td>
-        <a href="{% url 'test_request_detail' request.id %}" style="color: #004080; text-decoration: underline;">View</a>
-      </td>
-    </tr>
-    {% empty %}
-    <tr>
-      <td colspan="7" style="text-align:center; padding: 15px;">No test requests found.</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
 <script>
-  function filterTable() {
-    const search = document.getElementById("searchInput").value.toLowerCase();
-    const status = document.getElementById("statusFilter").value;
-    const fromDate = document.getElementById("fromDate").value;
-    const toDate = document.getElementById("toDate").value;
-    const rows = document.querySelectorAll("#dashboardTable tbody tr");
+// Enhanced table filtering
+function filterTable() {
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  const status = document.getElementById("statusFilter").value;
+  const fromDate = document.getElementById("fromDate").value;
+  const toDate = document.getElementById("toDate").value;
+  const rows = document.querySelectorAll("#dashboardTable tbody tr");
 
-    rows.forEach(row => {
-      const client = row.cells[0].textContent.toLowerCase();
-      const org = row.cells[1].textContent.toLowerCase();
-      const rowStatus = row.cells[4].getAttribute("data-status");
-      const submissionDate = row.cells[5].getAttribute("data-date");
+  rows.forEach(row => {
+    const client = row.cells[0].textContent.toLowerCase();
+    const org = row.cells[1].textContent.toLowerCase();
+    const rowStatus = row.cells[4].getAttribute("data-status");
+    const submissionDate = row.cells[5].getAttribute("data-date");
 
-      let show = true;
+    let show = true;
 
-      if (search && !client.includes(search) && !org.includes(search)) show = false;
-      if (status && rowStatus !== status) show = false;
-      if (fromDate && submissionDate < fromDate) show = false;
-      if (toDate && submissionDate > toDate) show = false;
+    // Search filter
+    if (search && !client.includes(search) && !org.includes(search)) {
+      show = false;
+    }
+    
+    // Status filter
+    if (status && rowStatus !== status) {
+      show = false;
+    }
+    
+    // Date range filter
+    if (fromDate && submissionDate < fromDate) {
+      show = false;
+    }
+    if (toDate && submissionDate > toDate) {
+      show = false;
+    }
 
-      row.style.display = show ? "" : "none";
-    });
+    // Apply visibility
+    if (show) {
+      row.style.display = "";
+      // Add animation for newly shown rows
+      if (!row.dataset.animated) {
+        row.style.animation = "fadeIn 0.3s ease";
+        row.dataset.animated = "true";
+      }
+    } else {
+      row.style.display = "none";
+    }
+  });
+}
+
+// Real-time updates simulation (for demo purposes)
+function simulateRealTimeUpdates() {
+  setInterval(() => {
+    const randomRow = Math.floor(Math.random() * document.querySelectorAll("#dashboardTable tbody tr").length);
+    const statusCells = document.querySelectorAll("[data-status]");
+    const statuses = ["pending", "in_progress", "completed", "cancelled"];
+    
+    if (statusCells[randomRow]) {
+      const currentStatus = statusCells[randomRow].getAttribute("data-status");
+      const newStatus = statuses[(statuses.indexOf(currentStatus) + 1) % statuses.length];
+      
+      statusCells[randomRow].setAttribute("data-status", newStatus);
+      statusCells[randomRow].querySelector(".status-badge").className = `status-badge status-${newStatus}`;
+      statusCells[randomRow].querySelector(".status-badge").textContent = 
+        newStatus === "pending" ? "Pending" :
+        newStatus === "in_progress" ? "In Progress" :
+        newStatus === "completed" ? "Completed" : "Cancelled";
+      
+      // Add animation
+      statusCells[randomRow].classList.add("status-updated");
+      setTimeout(() => {
+        statusCells[randomRow].classList.remove("status-updated");
+      }, 500);
+    }
+  }, 5000);
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize date pickers with default range (last 30 days)
+  const today = new Date();
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(today.getDate() - 30);
+  
+  document.getElementById("fromDate").valueAsDate = thirtyDaysAgo;
+  document.getElementById("toDate").valueAsDate = today;
+  
+  // For demo purposes - simulate real-time updates
+  simulateRealTimeUpdates();
+});
+
+// Add CSS for fade-in animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}

@@ -44,6 +44,9 @@ STATUS_CHOICES = [
     ('in_progress', 'In Progress'),
     ('completed', 'Completed'),
     ('cancelled', 'Cancelled'),
+    ('reviewed', 'Reviewed'),
+    ('approved', 'Approved'),
+    ('rejected', 'Rejected'),
 ]
 
 
@@ -63,14 +66,30 @@ class TestRequest(models.Model):
     signature = models.CharField(max_length=255, default='N/A', blank=True)
     analysis_types = models.CharField(max_length=255, choices=ANALYSIS_CHOICES)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    submitted_by = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True
+)
     def __str__(self):
         return f"Request by {self.client.name} ({self.client.client_id})"
 
-
 class Sample(models.Model):
+    TEST_TYPE_CHOICES = [
+        ('PROX', 'Proximate'),
+        ('AFLX', 'Aflatoxin'),
+        ('GREN', 'Gross Energy'),
+        ('VIT', 'Vitamins'),
+        ('WAT', 'Water'),
+        ('MIC', 'Microbial'),
+    ]
+    test_type = models.CharField(
+        max_length=4,
+        choices=TEST_TYPE_CHOICES,
+        default='PROX')
+
     test_request = models.ForeignKey(TestRequest, on_delete=models.CASCADE)
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='samples')
     sample_id = models.CharField(max_length=100)
@@ -99,16 +118,62 @@ PROXIMATE_SUBPARAMETERS = [
     ('fat', 'Fat'),
 ]
 
-
 class TestAssignment(models.Model):
-    sample = models.ForeignKey(Sample, on_delete=models.CASCADE, related_name='assignments')
-    analyst = models.ForeignKey(AnalystProfile, on_delete=models.CASCADE)
+    STATUS_CHOICES = [
+        ('assigned', 'Assigned'),
+        ('in_progress', 'In Progress'),
+        ('submitted', 'Submitted'),
+        ('completed', 'Completed'),
+    ]
+
+    samples = models.ManyToManyField('Sample')
+    analyst = models.ForeignKey('AnalystProfile', on_delete=models.CASCADE)
     test_parameter = models.CharField(max_length=30, choices=TEST_PARAMETERS)
     sub_parameter = models.CharField(max_length=30, blank=True, null=True)
     deadline = models.DateField()
     result = models.TextField(blank=True, null=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='assigned')
+    started = models.BooleanField(default=False)
+    started_at = models.DateTimeField(null=True, blank=True)
+    review_comments = models.TextField(blank=True, null=True)
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_test_requests'
+    )
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='submitted_test_requests'
+    )
+    review_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected')
+        ],
+        default='pending'
+    )
 
     def __str__(self):
+        sample_ids = ', '.join(s.sample_id for s in self.samples.all())
         if self.test_parameter == 'proximate':
-            return f"{self.sample.sample_id} - {self.sub_parameter} assigned"
-        return f"{self.sample.sample_id} - {self.test_parameter} assigned"
+            return f"{sample_ids} - {self.sub_parameter} assigned"
+        return f"{sample_ids} - {self.test_parameter} assigned"
+
+
+
+class ReviewLog(models.Model):
+    assignment = models.ForeignKey('TestAssignment', on_delete=models.CASCADE, related_name='reviews')
+    reviewer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    comments = models.TextField(blank=True, null=True)
+    decision = models.CharField(max_length=10, choices=[('approved', 'Approved'), ('rejected', 'Rejected')])
+    reviewed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.reviewer} - {self.decision} on {self.reviewed_at.strftime('%Y-%m-%d %H:%M')}"

@@ -1,201 +1,411 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block content %}
-<div class="container mt-4">
 
+{% block content %}
+<style>
+:root {
+  --primary: #003366;
+  --primary-light: #e0ecff;
+  --secondary: #00c4cc;
+  --success: #28a745;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --info: #17a2b8;
+  --light: #f8f9fa;
+  --dark: #343a40;
+}
+
+.dashboard-container {
+  padding: 2rem;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+/* Notification Messages */
+.alert-message {
+  border-radius: 8px;
+  border-left: 4px solid;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.alert-message .btn-close {
+  padding: 0.5rem;
+}
+
+/* Welcome Header */
+.welcome-card {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 64, 128, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-card::before {
+  content: '';
+  position: absolute;
+  top: -50px;
+  right: -50px;
+  width: 150px;
+  height: 150px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+}
+
+.welcome-card i {
+  font-size: 2rem;
+  margin-right: 1rem;
+}
+
+.welcome-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+/* Quick Access Buttons */
+.quick-access {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.quick-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.quick-btn i {
+  font-size: 1.1rem;
+}
+
+/* Chart Section */
+.chart-container {
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  color: var(--primary);
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  position: relative;
+  padding-bottom: 0.5rem;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: 2px;
+}
+
+/* Cards */
+.info-card {
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 64, 128, 0.1);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.card-count {
+  background: var(--primary);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* List Items */
+.list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #f1f1f1;
+  transition: all 0.2s ease;
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+.list-item:hover {
+  background-color: rgba(0, 64, 128, 0.03);
+}
+
+.list-badge {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Action Buttons */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.action-btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+}
+
+.action-btn-primary:hover {
+  background: #002b57;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 64, 128, 0.15);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  color: #dee2e6;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .quick-access {
+    justify-content: flex-start;
+  }
+  
+  .quick-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+</style>
+
+<div class="dashboard-container">
   <!-- Notification Messages -->
   {% if messages %}
     {% for message in messages %}
-      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-        {{ message }}
+      <div class="alert alert-{{ message.tags }} alert-message alert-dismissible fade show" role="alert">
+        <div class="d-flex align-items-center">
+          <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% else %}fa-info-circle{% endif %} me-2"></i>
+          <div>{{ message }}</div>
+        </div>
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
     {% endfor %}
   {% endif %}
 
-  <!-- Greeting -->
-  <div class="alert alert-info d-flex align-items-center" role="alert">
-    <i class="fas fa-user-md me-2"></i>
-    <strong>Welcome back, {{ user.first_name|default:"Lab Manager" }}!</strong>
+  <!-- Welcome Header -->
+  <div class="welcome-card d-flex align-items-center">
+    <i class="fas fa-user-md"></i>
+    <div>
+      <div class="welcome-text">Welcome back, {{ user.first_name|default:"Lab Manager" }}!</div>
+      <small>You're overseeing {{ total_assignments }} active test assignments</small>
+    </div>
   </div>
 
   <!-- Quick Access Buttons -->
-  <div class="d-flex flex-wrap gap-2 justify-content-end mb-3">
-    <a href="{% url 'intake_dashboard' %}" class="btn btn-outline-primary">
-      <i class="fas fa-warehouse me-1"></i> Intake Dashboard
+  <div class="quick-access">
+    <a href="{% url 'intake_dashboard' %}" class="quick-btn" style="background: white; color: var(--primary); border: 1px solid var(--primary);">
+      <i class="fas fa-warehouse"></i> Intake Dashboard
     </a>
-    <a href="{% url 'assign_tests' %}" class="btn btn-outline-danger">
-      <i class="fas fa-tasks me-1"></i> Assign Tests
+    <a href="{% url 'assign_test' %}" class="quick-btn" style="background: white; color: var(--danger); border: 1px solid var(--danger);">
+      <i class="fas fa-tasks"></i> Assign Tests
     </a>
-    <a href="{% url 'reagent_list' %}" class="btn btn-outline-secondary">
-      <i class="fas fa-flask me-1"></i> View Reagents
+    <a href="{% url 'reagent_list' %}" class="quick-btn" style="background: white; color: #6c757d; border: 1px solid #6c757d;">
+      <i class="fas fa-flask"></i> View Reagents
     </a>
-    <a href="{% url 'equipment_list' %}" class="btn btn-outline-success">
-      <i class="fas fa-cogs me-1"></i> View Equipment
+    <a href="{% url 'equipment_list' %}" class="quick-btn" style="background: white; color: var(--success); border: 1px solid var(--success);">
+      <i class="fas fa-cogs"></i> View Equipment
     </a>
-  </div>
-
-  <!-- Filter/Search -->
-  <form method="get" class="row g-2 mb-4">
-    <div class="col-md-4">
-      <input type="text" name="q" class="form-control" placeholder="Search by Sample ID or Client ID..." value="{{ request.GET.q }}">
-    </div>
-    <div class="col-md-3">
-      <select name="status" class="form-select">
-        <option value="">Filter by Status</option>
-        <option value="assigned" {% if request.GET.status == 'assigned' %}selected{% endif %}>Assigned</option>
-        <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-        <option value="submitted" {% if request.GET.status == 'submitted' %}selected{% endif %}>Submitted</option>
-        <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
-      </select>
-    </div>
-    <div class="col-md-2">
-      <button type="submit" class="btn btn-primary w-100">
-        <i class="fas fa-search me-1"></i> Search
-      </button>
-    </div>
-  </form>
-
-  <!-- Summary Cards -->
-  <div class="row text-center">
-    <div class="col">
-      <div class="card border-primary mb-3">
-        <div class="card-header">Total Samples</div>
-        <div class="card-body text-primary">
-          <h5>{{ total_samples }}</h5>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card border-warning mb-3">
-        <div class="card-header">Pending</div>
-        <div class="card-body text-warning">
-          <h5>{{ pending }}</h5>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card border-info mb-3">
-        <div class="card-header">In Progress</div>
-        <div class="card-body text-info">
-          <h5>{{ in_progress }}</h5>
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="card border-success mb-3">
-        <div class="card-header">Completed</div>
-        <div class="card-body text-success">
-          <h5>{{ completed }}</h5>
-        </div>
-      </div>
-    </div>
+    <a href="{% url 'result_overview' %}" class="quick-btn" style="background: white; color: var(--info); border: 1px solid var(--info);">
+      <i class="fas fa-chart-bar"></i> Results Overview
+    </a>
   </div>
 
   <!-- Chart Section -->
-  <h4 class="mt-4">Assignment Overview</h4>
-  <canvas id="testChart" height="100"></canvas>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    const ctx = document.getElementById('testChart').getContext('2d');
-    const testChart = new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: ['Assigned', 'In Progress', 'Submitted', 'Completed'],
-        datasets: [{
-          label: 'Test Assignments',
-          data: [{{ assigned }}, {{ in_progress }}, {{ submitted }}, {{ completed }}],
-          backgroundColor: ['#6c757d', '#ffc107', '#0d6efd', '#198754']
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true }
-        }
-      }
-    });
-  </script>
+  <div class="chart-container">
+    <h4 class="section-title">Assignment Overview</h4>
+    <canvas id="testChart" height="100"></canvas>
+  </div>
 
   <!-- Test Types -->
-  <h4 class="mt-5">Test Types</h4>
-  <ul id="test-types-list" class="list-group">
-    {% for key, val in test_types.items %}
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        {{ key }}
-        <span class="badge bg-primary rounded-pill">{{ val }}</span>
-      </li>
-    {% endfor %}
-  </ul>
+  <div class="info-card">
+    <div class="card-header">
+      <h4 class="section-title" style="margin-bottom: 0;">Test Types</h4>
+      <span class="card-count">{{ test_types|length }} types</span>
+    </div>
+    <div>
+      {% for key, val in test_types.items %}
+        <div class="list-item">
+          <span>{{ key }}</span>
+          <span class="list-badge">{{ val }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
 
-  <!-- Expiring Reagents -->
-  <h4 class="mt-4">Expiring Reagents</h4>
-  <ul id="reagents-list" class="list-group">
-    {% for r in expiring_reagents %}
-      <li class="list-group-item">{{ r.name }} ({{ r.expiry_date }})</li>
-    {% empty %}
-      <li class="list-group-item">All reagents are up-to-date</li>
-    {% endfor %}
-  </ul>
+  <!-- Equipment Calibration Due -->
+  <div class="info-card">
+    <div class="card-header">
+      <h4 class="section-title" style="margin-bottom: 0;">Equipment Calibration Due</h4>
+      <span class="card-count">{{ calibration_due|length }} items</span>
+    </div>
+    {% if calibration_due %}
+      <div>
+        {% for e in calibration_due %}
+          <div class="list-item">
+            <div>
+              <strong>{{ e.name }}</strong>
+              <div class="text-muted" style="font-size: 0.85rem;">Due {{ e.next_calibration|date:"Y-m-d" }}</div>
+            </div>
+            <span class="badge bg-warning text-dark">Pending</span>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <i class="fas fa-check-circle"></i>
+        <h5>All Equipment Calibrated</h5>
+        <p>Great job! All equipment is up-to-date on calibration.</p>
+      </div>
+    {% endif %}
+  </div>
 
-  <!-- Calibration Due -->
-  <h4 class="mt-4">Equipment Calibration Due</h4>
-  <ul id="calibration-list" class="list-group">
-    {% for e in calibration_due %}
-      <li class="list-group-item">{{ e.name }} – due {{ e.next_calibration_date }}</li>
-    {% empty %}
-      <li class="list-group-item">All equipment calibrated</li>
-    {% endfor %}
-  </ul>
-
+  <!-- Pending Reviews Section -->
+  <div class="info-card">
+    <div class="card-header">
+      <h4 class="section-title" style="margin-bottom: 0;">Tests Pending Review</h4>
+      <span class="card-count">{{ pending_reviews|length }} tests</span>
+    </div>
+    {% if pending_reviews %}
+      <div>
+        {% for assignment in pending_reviews %}
+          <div class="list-item">
+            <div>
+              <strong>Samples:</strong> {{ assignment.samples.all|join:", " }}<br>
+              <strong>Test:</strong> {{ assignment.test_parameter }}
+              {% if assignment.sub_parameter %} – {{ assignment.sub_parameter }}{% endif %}<br>
+              <small class="text-muted">Analyst: {{ assignment.analyst.user.get_full_name }}</small>
+            </div>
+            <a href="{% url 'review_test' assignment.id %}" class="action-btn action-btn-primary">
+              <i class="fas fa-eye me-1"></i> Review
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <i class="fas fa-clipboard-check"></i>
+        <h5>No Tests Pending Review</h5>
+        <p>All tests have been reviewed and approved.</p>
+      </div>
+    {% endif %}
+  </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  function fetchDashboardData() {
-    fetch("{% url 'intake_dashboard' %}")
-      .then(response => response.json())
-      .then(data => {
-        // Update counts
-        document.querySelector('.card-body.text-primary h5').textContent = data.total_samples;
-        document.querySelector('.card-body.text-warning h5').textContent = data.pending;
-        document.querySelector('.card-body.text-info h5').textContent = data.in_progress;
-        document.querySelector('.card-body.text-success h5').textContent = data.completed;
-
-        // Update chart
-        testChart.data.datasets[0].data = [
-          data.assigned, data.in_progress, data.submitted, data.completed
-        ];
-        testChart.update();
-
-        // Update test types list
-        const testList = document.getElementById('test-types-list');
-        if (testList) {
-          testList.innerHTML = '';
-          for (const [key, value] of Object.entries(data.test_types)) {
-            testList.innerHTML += `
-              <li class="list-group-item d-flex justify-content-between align-items-center">
-                ${key}
-                <span class="badge bg-primary rounded-pill">${value}</span>
-              </li>`;
+  const ctx = document.getElementById('testChart').getContext('2d');
+  const testChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Assigned', 'In Progress', 'Submitted', 'Completed'],
+      datasets: [{
+        label: 'Test Assignments',
+        data: [{{ assigned }}, {{ in_progress }}, {{ submitted }}, {{ completed }}],
+        backgroundColor: [
+          'rgba(108, 117, 125, 0.8)',
+          'rgba(255, 193, 7, 0.8)',
+          'rgba(13, 110, 253, 0.8)',
+          'rgba(25, 135, 84, 0.8)'
+        ],
+        borderColor: [
+          'rgba(108, 117, 125, 1)',
+          'rgba(255, 193, 7, 1)',
+          'rgba(13, 110, 253, 1)',
+          'rgba(25, 135, 84, 1)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `${context.dataset.label}: ${context.raw}`;
+            }
           }
         }
-
-        // Update expiring reagents
-        const reagentList = document.getElementById('reagents-list');
-        reagentList.innerHTML = data.expiring_reagents.length > 0 ?
-          data.expiring_reagents.map(r => `<li class="list-group-item">${r.name} (${r.expiry_date})</li>`).join('') :
-          '<li class="list-group-item">All reagents are up-to-date</li>';
-
-        // Update calibration due
-        const calibrationList = document.getElementById('calibration-list');
-        calibrationList.innerHTML = data.calibration_due.length > 0 ?
-          data.calibration_due.map(e => `<li class="list-group-item">${e.name} – due ${e.next_calibration_date}</li>`).join('') :
-          '<li class="list-group-item">All equipment calibrated</li>';
-      });
-  }
-
-  // Fetch every 60 seconds
-  setInterval(fetchDashboardData, 60000);
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0
+          }
+        }
+      }
+    }
+  });
 </script>
-
 {% endblock %}

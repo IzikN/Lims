@@ -7,20 +7,128 @@ from django.utils import timezone
 from .forms import TestAssignmentForm
 from .forms import SubmitResultForm 
 from .models import TestAssignment, AnalystProfile
+from datetime import datetime
+from collections import defaultdict
+from django.db.models import Count, Sum
+from django.utils import timezone
+from .models import TestAssignment, TestRequest
+from django.views.decorators.http import require_http_methods
+from .models import ReviewLog
+
+def sync_test_request_status(client):
+    test_request = TestRequest.objects.filter(client=client).first()
+    if not test_request:
+        return
+
+    assignments = TestAssignment.objects.filter(samples__client=client).distinct()
+
+    if all(a.status == 'completed' for a in assignments):
+        test_request.status = 'completed'
+    elif all(a.status == 'cancelled' for a in assignments):
+        test_request.status = 'cancelled'
+    elif any(a.status == 'in_progress' for a in assignments):
+        test_request.status = 'in_progress'
+    else:
+        test_request.status = 'assigned'
+
+    test_request.save()
+
 
 @login_required
-def start_test(request, pk):
-    assignment = get_object_or_404(TestAssignment, pk=pk, analyst=request.user)
+@require_http_methods(["GET", "POST"])
+def enter_result(request, assignment_id):
+    assignment = get_object_or_404(TestAssignment, id=assignment_id)
 
-    if assignment.status != 'assigned':
-        messages.warning(request, "This test cannot be started.")
+    if request.method == 'POST':
+        result = request.POST.get('result')
+        if not result:
+            messages.error(request, "Result cannot be empty.")
+            return redirect('enter_result', assignment_id=assignment_id)
+
+        assignment.result = result
+        assignment.status = 'completed'
+        assignment.completed_at = timezone.now()
+        assignment.save()
+
+        sync_test_request_status(assignment.samples.first().client)
+        messages.success(request, "Result submitted successfully.")
         return redirect('analyst_dashboard')
 
-    assignment.status = 'in_progress'
-    assignment.save()
-    messages.success(request, f"Started test for Sample {assignment.sample.sample_id}.")
+    return render(request, 'samples/enter_result.html', {'assignment': assignment})
+
+@login_required
+def start_test(request, assignment_id):
+    assignment = get_object_or_404(TestAssignment, id=assignment_id)
+
+    if not assignment.started:
+        assignment.started = True
+        assignment.started_at = timezone.now()
+        assignment.status = 'in_progress'
+        assignment.save()
+        messages.success(request, "Test started successfully.")
+    else:
+        messages.info(request, "Test already started.")
+
     return redirect('analyst_dashboard')
 
+
+@login_required
+def review_test(request, assignment_id):
+    assignment = get_object_or_404(TestAssignment, pk=assignment_id)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        comments = request.POST.get('comments', '')
+        reviewer = request.user
+
+        # Save current review
+        ReviewLog.objects.create(
+            assignment=assignment,
+            reviewer=reviewer,
+            comments=comments,
+            decision='approved' if action == 'approve' else 'rejected'
+        )
+
+        assignment.review_comments = comments
+        assignment.reviewer = reviewer
+        assignment.latest_review = timezone.now()
+
+        if action == 'approve':
+            assignment.review_status = 'approved'
+            assignment.status = 'completed'
+        elif action == 'reject':
+            assignment.review_status = 'rejected'
+            assignment.status = 'in_progress'
+
+        assignment.save()
+        return redirect('result_overview')
+
+    return render(request, 'samples/review_test.html', {'assignment': assignment})
+
+@login_required
+def result_overview(request):
+
+    results_by_client = defaultdict(list)
+
+    assignments = TestAssignment.objects.select_related('analyst__user').prefetch_related('samples')
+
+    for assignment in assignments:
+        # Assuming all samples in this assignment belong to the same client
+        client_id = assignment.samples.first().client_id if assignment.samples.exists() else 'Unknown'
+
+        for sample in assignment.samples.all():
+            results_by_client[client_id].append({
+                'sample_id': sample.sample_id,
+                'test': assignment.test_parameter,
+                'sub_test': assignment.sub_parameter,
+                'result': assignment.result,
+                'analyst': assignment.analyst.user.get_full_name() if assignment.analyst else 'Unknown',
+                'assignment_id': assignment.id 
+            })
+
+    return render(request, 'samples/result_overview.html', {
+        'results_by_client': dict(results_by_client)
+    })
 
 @login_required
 def submit_test_result(request, pk):
@@ -41,30 +149,56 @@ def submit_test_result(request, pk):
 
 @login_required
 def assign_test_view(request):
+    if not request.user.role == 'lab_manager':
+        return redirect('no_permission')
+
     client_id = request.GET.get('client_id')
-    form = None
-    samples = None
+    if not client_id:
+        messages.error(request, "No client ID provided.")
+        return redirect('intake_dashboard')
 
-    if client_id:
-        # Get Client object by client_id string field
-        client = get_object_or_404(Client, client_id=client_id)
-        samples = Sample.objects.filter(client=client)
+    client = get_object_or_404(Client, client_id=client_id)
+    samples = Sample.objects.filter(client=client)
 
-        if request.method == 'POST':
-            form = TestAssignmentForm(request.POST, client_id=client_id)
-            if form.is_valid():
-                form.save()
-                # Redirect back with same client_id to continue assignments
-                return redirect(f"{request.path}?client_id={client_id}")
-        else:
-            form = TestAssignmentForm(client_id=client_id)
-    else:
-        form = None
+    if request.method == 'POST':
+        sample_ids = request.POST.getlist('samples')
+        test_params = request.POST.getlist('test_parameter[]')
+        sub_params = request.POST.getlist('sub_parameter[]')
+        analysts = request.POST.getlist('analyst[]')
+        deadlines = request.POST.getlist('deadline[]')
 
+        print("Sample IDs:", sample_ids)
+        print("Test Parameters:", test_params)
+        print("Sub Parameters:", sub_params)
+        print("Analysts:", analysts)
+        print("Deadlines:", deadlines)
+
+        sample_qs = Sample.objects.filter(id__in=sample_ids)
+
+        for i in range(len(test_params)):
+            analyst = get_object_or_404(AnalystProfile, id=analysts[i])
+            test_param = test_params[i]
+            sub_param = sub_params[i] if test_param == 'proximate' else None
+            deadline = deadlines[i]
+
+            assignment = TestAssignment.objects.create(
+                analyst=analyst,
+                test_parameter=test_param,
+                sub_parameter=sub_param,
+                deadline=deadline,
+                status='assigned'
+            )
+            assignment.samples.set(sample_qs)
+
+        messages.success(request, "Tests assigned successfully!")
+        return redirect('intake_dashboard')
+
+    analysts = AnalystProfile.objects.all()
     return render(request, 'samples/assign_test.html', {
-        'form': form,
         'client_id': client_id,
         'samples': samples,
+        'analysts': analysts,
+        'client': client,
     })
 
 def generate_unique_client_id():
@@ -154,31 +288,28 @@ def is_lab_manager_or_customer_service(user):
     return user.groups.filter(name__in=['Lab Manager', 'Customer Service']).exists()
 
 
-
+@login_required
 def intake_dashboard(request):
     test_requests = TestRequest.objects.all()
 
-    # Get filter values from query parameters
+    # Filters
     client_name = request.GET.get('client_name')
     status = request.GET.get('status')
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
 
-    # Filter by client name
     if client_name:
         test_requests = test_requests.filter(client__name__icontains=client_name)
 
-    # Filter by status
     if status:
         test_requests = test_requests.filter(status__iexact=status)
 
-    # Filter by date range
     if start_date:
         try:
             start = datetime.strptime(start_date, '%Y-%m-%d')
             test_requests = test_requests.filter(created_at__gte=start)
         except ValueError:
-            pass  # Ignore invalid date
+            pass
 
     if end_date:
         try:
@@ -187,11 +318,27 @@ def intake_dashboard(request):
         except ValueError:
             pass
 
-    # Order by latest first
     test_requests = test_requests.order_by('-created_at')
+
+    # Summary stats
+    total_clients = test_requests.values('client').distinct().count()
+    total_samples = test_requests.aggregate(total=Sum('number_of_samples'))['total'] or 0
+
+    assigned_count = test_requests.filter(status='assigned').count()
+    pending_count = test_requests.filter(status='pending').count()
+    in_progress_count = test_requests.filter(status='in_progress').count()
+    completed_count = test_requests.filter(status='completed').count()
+    cancelled_count = test_requests.filter(status='cancelled').count()
 
     context = {
         'test_requests': test_requests,
+        'total_clients': total_clients,
+        'total_samples': total_samples,
+        'assigned_count': assigned_count,
+        'pending_count': pending_count,
+        'in_progress_count': in_progress_count,
+        'completed_count': completed_count,
+        'cancelled_count': cancelled_count,
         'filters': {
             'client_name': client_name or '',
             'status': status or '',
@@ -199,7 +346,9 @@ def intake_dashboard(request):
             'end_date': end_date or '',
         }
     }
+
     return render(request, 'samples/intake_dashboard.html', context)
+
 
 @login_required
 def test_request_detail(request, pk):
@@ -210,13 +359,43 @@ def test_request_detail(request, pk):
 
 @login_required
 def analyst_dashboard(request):
-    # Check if user is in 'Analyst' group
-    if not request.user.groups.filter(name='Analyst').exists():
-        return redirect('unauthorized')  # You can create a simple page
+    analyst = request.user.analystprofile
+    test_type_filter = request.GET.get('test_type', '')
 
-    analyst_profile = AnalystProfile.objects.get(user=request.user)
-    assignments = TestAssignment.objects.filter(analyst=analyst_profile)
+    assignments = TestAssignment.objects.filter(analyst=analyst).prefetch_related('samples')
+
+    if test_type_filter:
+        assignments = assignments.filter(test_parameter=test_type_filter)
+
+    today = timezone.localdate()
+
+    grouped_assignments = [
+        {
+            'label': 'Overdue Tests',
+            'items': [a for a in assignments if a.deadline and a.deadline < today and a.status in ['assigned', 'in_progress']]
+        },
+        {
+            'label': 'Due Today',
+            'items': [a for a in assignments if a.deadline == today and a.status in ['assigned', 'in_progress']]
+        },
+        {
+            'label': 'Upcoming Tests',
+            'items': [a for a in assignments if a.deadline and a.deadline > today and a.status in ['assigned', 'in_progress']]
+        },
+        {
+            'label': 'Completed',
+            'items': [a for a in assignments if a.status == 'completed']
+        },
+    ]
+
+    has_critical_deadlines = any(group['items'] for group in grouped_assignments[:2])  # Overdue or Due Today
+
+    test_types = TestAssignment.objects.values_list('test_parameter', flat=True).distinct()
 
     return render(request, 'samples/analyst_dashboard.html', {
-        'assignments': assignments
+        'grouped_assignments': grouped_assignments,
+        'today': today,
+        'has_critical_deadlines': has_critical_deadlines,
+        'test_types': test_types,
+        'selected_test_type': test_type_filter,
     })

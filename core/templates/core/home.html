@@ -3,101 +3,443 @@
 
 {% block content %}
 <style>
-.hero {
-  background: linear-gradient(to right, #003366, #004080);
-  color: white;
-  padding: 60px 0;
+:root {
+  --primary: #003366;
+  --secondary: #004080;
+  --accent: #00c4cc;
+  --light: #f8f9fa;
+  --dark: #212529;
 }
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Modern hero section with animated gradient */
+.hero {
+  background: linear-gradient(-45deg, #003366, #004080, #0066cc, #00c4cc);
+  background-size: 400% 400%;
+  color: white;
+  padding: 100px 0;
+  position: relative;
+  overflow: hidden;
+  animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url("{% static 'images/lab-pattern.png' %}") center/cover;
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* Floating particles animation */
+.particle {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Modern button styles */
+.btn-jgl {
+  background: var(--accent);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 196, 204, 0.3);
+}
+
+.btn-jgl:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 196, 204, 0.4);
+  color: white;
+}
+
+.btn-jgl-outline {
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.btn-jgl-outline:hover {
+  background: var(--accent);
+  color: white;
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border: none;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-hover:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 24px rgba(0, 64, 128, 0.2);
+}
+
 .card-icon {
-  font-size: 2rem;
-  color: #004080;
+  font-size: 2.5rem;
+  background: linear-gradient(to right, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 1rem;
+}
+
+/* Section styling */
+.section-title {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 2rem;
+}
+
+.section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(to right, var(--primary), var(--accent));
+  border-radius: 2px;
+}
+
+/* Accreditation badge animation */
+.badge-container {
+  position: relative;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.badge-container:hover {
+  transform: scale(1.05);
+}
+
+/* Modern footer */
+.footer-wave {
+  position: relative;
+  height: 50px;
+  width: 100%;
+  background: var(--primary);
+}
+
+.footer-wave::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background-repeat: repeat;
+  height: 10px;
+  background-size: 20px 20px;
+  background-image: radial-gradient(circle at 10px -5px, transparent 12px, white 13px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .hero {
+    padding: 80px 0;
+  }
+  
+  .display-4 {
+    font-size: 2.5rem;
+  }
 }
 </style>
 
+<!-- Hero Section with Particles -->
 <div class="hero text-center">
-  <div class="container">
-    <h1 class="display-4 fw-bold">Welcome to JaaGeeLab</h1>
-    <p class="lead">ISO 17025 Accredited Laboratory | Trusted Results | Industry-Grade LIMS</p>
-    <a href="{% url 'login' %}" class="btn btn-light btn-lg mt-3">Client Login</a>
-    <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg mt-3 ms-2">Staff Login</a>
+  <div class="container hero-content">
+    <h1 class="display-4 fw-bold mb-4 animate__animated animate__fadeInDown">Welcome to <span class="text-gradient">JaaGeeLab</span></h1>
+    <p class="lead fs-3 mb-5 animate__animated animate__fadeIn animate__delay-1s">ISO 17025 Accredited Laboratory | Trusted Results | Scientific Excellence</p>
+    <div class="d-flex justify-content-center gap-3 animate__animated animate__fadeInUp animate__delay-1s">
+      <a href="{% url 'login' %}" class="btn btn-jgl btn-lg px-4 py-3">Client Portal</a>
+      <a href="{% url 'login' %}" class="btn btn-jgl-outline btn-lg px-4 py-3">Lab Login</a>
+    </div>
   </div>
+  
+  <!-- Particles will be added via JavaScript -->
+  <div id="particles-js"></div>
 </div>
 
-<div class="container py-5">
+<!-- Scope of Analysis Section -->
+<div class="container py-5 my-5">
   <div class="text-center mb-5">
-    <h2 class="fw-bold">Our Scope of Analysis</h2>
-    <p class="text-muted">We are accredited to perform the following high-quality tests.</p>
+    <h2 class="fw-bold section-title">Our Scope of Analysis</h2>
+    <p class="text-muted fs-5">We are accredited to perform the following high-quality testing services</p>
   </div>
 
   <div class="row g-4">
     <div class="col-md-4">
-      <div class="card h-100 shadow-sm text-center">
-        <div class="card-body">
-          <div class="card-icon mb-3">🧪</div>
-          <h5 class="card-title">Proximate Analysis</h5>
-          <p class="card-text">Accurate analysis of moisture, crude protein, fat, fiber, and ash content in food/feed samples.</p>
+      <div class="card h-100 card-hover">
+        <div class="card-body p-4 text-center">
+          <div class="card-icon">🧪</div>
+          <h3 class="card-title h4">Proximate Analysis</h3>
+          <p class="card-text">Accurate analysis of moisture, crude protein, fat, fiber, and ash content in various samples.</p>
+          <a href="#" class="btn btn-sm btn-link text-decoration-none mt-3">Learn more →</a>
         </div>
       </div>
     </div>
 
     <div class="col-md-4">
-      <div class="card h-100 shadow-sm text-center">
-        <div class="card-body">
-          <div class="card-icon mb-3">🌽</div>
-          <h5 class="card-title">Aflatoxin Testing</h5>
-          <p class="card-text">Detection and quantification of aflatoxins using Neogen AccuScan™, ensuring food safety compliance.</p>
+      <div class="card h-100 card-hover">
+        <div class="card-body p-4 text-center">
+          <div class="card-icon">🌽</div>
+          <h3 class="card-title h4">Aflatoxin Testing</h3>
+          <p class="card-text">Detection and quantification of aflatoxins in food and agricultural products.</p>
+          <a href="#" class="btn btn-sm btn-link text-decoration-none mt-3">Learn more →</a>
         </div>
       </div>
     </div>
 
     <div class="col-md-4">
-      <div class="card h-100 shadow-sm text-center">
-        <div class="card-body">
-          <div class="card-icon mb-3">🔥</div>
-          <h5 class="card-title">Gross Energy</h5>
-          <p class="card-text">Calorific value determination via bomb calorimetry for feeds, ensuring precise energy profiling.</p>
+      <div class="card h-100 card-hover">
+        <div class="card-body p-4 text-center">
+          <div class="card-icon">🔥</div>
+          <h3 class="card-title h4">Gross Energy</h3>
+          <p class="card-text">Calorific value determination via bomb calorimetry for nutritional assessment.</p>
+          <a href="#" class="btn btn-sm btn-link text-decoration-none mt-3">Learn more →</a>
         </div>
       </div>
     </div>
 
     <div class="col-md-4">
-      <div class="card h-100 shadow-sm text-center">
-        <div class="card-body">
-          <div class="card-icon mb-3">💊</div>
-          <h5 class="card-title">Vitamin Analysis</h5>
-          <p class="card-text">Quantitative analysis of key vitamins essential in fortified foods and animal feed supplements.</p>
+      <div class="card h-100 card-hover">
+        <div class="card-body p-4 text-center">
+          <div class="card-icon">💊</div>
+          <h3 class="card-title h4">Vitamin Analysis</h3>
+          <p class="card-text">Quantitative analysis of key vitamins essential for health and nutrition labeling.</p>
+          <a href="#" class="btn btn-sm btn-link text-decoration-none mt-3">Learn more →</a>
         </div>
       </div>
     </div>
 
     <div class="col-md-4">
-      <div class="card h-100 shadow-sm text-center">
-        <div class="card-body">
-          <div class="card-icon mb-3">💧</div>
-          <h5 class="card-title">Water Analysis</h5>
-          <p class="card-text">Physical, chemical, and microbiological evaluation of water samples to national and WHO standards.</p>
+      <div class="card h-100 card-hover">
+        <div class="card-body p-4 text-center">
+          <div class="card-icon">💧</div>
+          <h3 class="card-title h4">Water Analysis</h3>
+          <p class="card-text">Physical, chemical, and microbiological testing of water for safety and quality.</p>
+          <a href="#" class="btn btn-sm btn-link text-decoration-none mt-3">Learn more →</a>
         </div>
       </div>
     </div>
 
     <div class="col-md-4">
-      <div class="card h-100 shadow-sm text-center">
-        <div class="card-body">
-          <div class="card-icon mb-3">🧫</div>
-          <h5 class="card-title">Microbial Analysis</h5>
-          <p class="card-text">Testing for bacteria, fungi, and pathogens to validate product safety and shelf life.</p>
+      <div class="card h-100 card-hover">
+        <div class="card-body p-4 text-center">
+          <div class="card-icon">🧫</div>
+          <h3 class="card-title h4">Microbial Analysis</h3>
+          <p class="card-text">Testing for bacteria, fungi, and pathogens in food, water, and environmental samples.</p>
+          <a href="#" class="btn btn-sm btn-link text-decoration-none mt-3">Learn more →</a>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Accreditation Section with Parallax Effect -->
+<div class="parallax-section py-5" style="background-image: url('{% static 'images/lab-background.jpg' %}'); background-attachment: fixed; background-position: center; background-repeat: no-repeat; background-size: cover; position: relative;">
+  <div class="overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 51, 102, 0.85);"></div>
+  <div class="container text-center py-5 position-relative" style="z-index: 2;">
+    <h2 class="fw-bold text-white mb-4">Accreditation & Compliance</h2>
+    <p class="lead text-light mb-5">JaaGeeLab is ISO/IEC 17025 accredited – delivering internationally recognized testing with scientific integrity.</p>
+    <div class="badge-container">
+      <img src="{% static 'images/iso17025_badge.png' %}" alt="ISO 17025 Accredited" class="img-fluid" style="max-height: 150px;">
+    </div>
+    <div class="mt-4">
+      <a href="#" class="btn btn-jgl btn-lg mt-3">View Our Certifications</a>
+    </div>
+  </div>
+</div>
+
+<!-- Testimonials Section -->
+<div class="container py-5 my-5">
+  <div class="text-center mb-5">
+    <h2 class="fw-bold section-title">Trusted by Industry Leaders</h2>
+  </div>
+  
+  <div class="row">
+    <div class="col-lg-8 mx-auto">
+      <div class="testimonial-carousel owl-carousel owl-theme">
+        <div class="item text-center px-4">
+          <div class="testimonial-card p-4 rounded shadow-sm">
+            <div class="mb-4">
+              <img src="{% static 'images/client1.jpg' %}" class="rounded-circle" width="80" height="80" alt="Client">
+            </div>
+            <p class="mb-4">"JaaGeeLab's accurate and timely results have been instrumental in our quality control process. Their team is highly professional and responsive."</p>
+            <h5 class="mb-1">Dr. ABC</h5>
+            <p class="text-muted">Quality Director, XYZ Limited</p>
+          </div>
+        </div>
+        <div class="item text-center px-4">
+          <div class="testimonial-card p-4 rounded shadow-sm">
+            <div class="mb-4">
+              <img src="{% static 'images/client2.jpg' %}" class="rounded-circle" width="80" height="80" alt="Client">
+            </div>
+            <p class="mb-4">"We've relied on JaaGeeLab for all our nutritional analysis needs. Their ISO accreditation gives us complete confidence in their results."</p>
+            <h5 class="mb-1">DEF</h5>
+            <p class="text-muted">CEO, A+ Farms</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Section -->
 <div class="bg-light py-5">
-  <div class="container text-center">
-    <h4 class="fw-bold">Accreditation & Compliance</h4>
-    <p class="text-muted">JaaGeeLab is ISO/IEC 17025 accredited – delivering results with integrity, traceability, and confidence.</p>
-    <img src="{% static 'images/iso17025_badge.jpg' %}" alt="ISO 17025 Certified" width="150">
+  <div class="container">
+    <div class="row text-center">
+      <div class="col-md-3 col-6 mb-4 mb-md-0">
+        <div class="counter" data-target="10000">0</div>
+        <p class="text-muted mb-0">Tests Performed</p>
+      </div>
+      <div class="col-md-3 col-6 mb-4 mb-md-0">
+        <div class="counter" data-target="99.8">0</div>
+        <p class="text-muted mb-0">% Accuracy</p>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="counter" data-target="24">0</div>
+        <p class="text-muted mb-0">Hour Turnaround</p>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="counter" data-target="500">0</div>
+        <p class="text-muted mb-0">Clients Served</p>
+      </div>
+    </div>
   </div>
 </div>
+
+<!-- CTA Section -->
+<div class="py-5" style="background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);">
+  <div class="container text-center py-4">
+    <h2 class="text-white mb-4">Ready to Get Started?</h2>
+    <p class="lead text-light mb-5">Contact us today to discuss your testing needs and request a quote.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+      <a href="#" class="btn btn-jgl btn-lg px-4">Request a Quote</a>
+      <a href="tel:+1234567890" class="btn btn-jgl-outline btn-lg px-4">
+        <i class="fas fa-phone me-2"></i> Call Us Now
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Footer Wave -->
+<div class="footer-wave"></div>
+
+<!-- JavaScript Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+<script>
+// Initialize particles.js
+document.addEventListener('DOMContentLoaded', function() {
+  if (typeof particlesJS !== 'undefined') {
+    particlesJS('particles-js', {
+      particles: {
+        number: { value: 80, density: { enable: true, value_area: 800 } },
+        color: { value: "#ffffff" },
+        shape: { type: "circle" },
+        opacity: { value: 0.5, random: true },
+        size: { value: 3, random: true },
+        line_linked: { enable: true, distance: 150, color: "#ffffff", opacity: 0.4, width: 1 },
+        move: { enable: true, speed: 2, direction: "none", random: true, straight: false, out_mode: "out" }
+      },
+      interactivity: {
+        detect_on: "canvas",
+        events: {
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: true, mode: "push" }
+        }
+      }
+    });
+  }
+
+  // Initialize testimonial carousel
+  $('.testimonial-carousel').owlCarousel({
+    loop: true,
+    margin: 10,
+    nav: true,
+    responsive: {
+      0: { items: 1 },
+      768: { items: 1 },
+      992: { items: 1 }
+    }
+  });
+
+  // Animate counter numbers
+  const counters = document.querySelectorAll('.counter');
+  const speed = 200;
+  
+  counters.forEach(counter => {
+    const animate = () => {
+      const target = +counter.getAttribute('data-target');
+      const count = +counter.innerText;
+      const increment = target / speed;
+      
+      if (count < target) {
+        counter.innerText = Math.ceil(count + increment);
+        setTimeout(animate, 1);
+      } else {
+        counter.innerText = target;
+      }
+    };
+    
+    // Start animation when element is in viewport
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        animate();
+        observer.unobserve(counter);
+      }
+    });
+    
+    observer.observe(counter);
+  });
+
+  // Add scroll animation to elements
+  const animateOnScroll = () => {
+    const elements = document.querySelectorAll('.card-hover, .section-title, .badge-container');
+    
+    elements.forEach(element => {
+      const elementPosition = element.getBoundingClientRect().top;
+      const screenPosition = window.innerHeight / 1.3;
+      
+      if (elementPosition < screenPosition) {
+        element.classList.add('animate__animated', 'animate__fadeInUp');
+      }
+    });
+  };
+  
+  window.addEventListener('scroll', animateOnScroll);
+  animateOnScroll(); // Run once on load
+});
+</script>
 
 {% endblock %}

@@ -1,120 +1,632 @@
 {% extends 'base.html' %}
 {% load static %}
-{% load custom_filters %}
 
 {% block content %}
-<div class="container mt-5">
+<style>
+:root {
+  --primary: #003366;
+  --primary-light: #e0ecff;
+  --secondary: #00c4cc;
+  --success: #28a745;
+  --warning: #ffc107;
+  --danger: #dc3545;
+  --info: #17a2b8;
+  --light: #f8f9fa;
+  --dark: #343a40;
+}
 
-  <div class="mb-4 text-center">
-    <h2 class="fw-bold">
-      👋 Welcome, <span class="text-primary">{{ request.user.first_name|default:request.user.username }}</span>
-    </h2>
-    <p class="text-muted">Here's a summary of your assigned test activities</p>
-    <div class="mb-4 text-center">
-  <a href="{% url 'equipment_log_list' %}" class="btn btn-outline-secondary me-2">
-    <i class="fas fa-tools me-1"></i> Equipment Log
-  </a>
-  <a href="{% url 'equipment_log_create' %}" class="btn btn-outline-success">
-    <i class="fas fa-plus-circle me-1"></i> Add Equipment Log
-  </a>
-</div>
+.dashboard-container {
+  padding: 2rem;
+  max-width: 1800px;
+  margin: 0 auto;
+}
 
-  </div>
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
 
-  <div class="card shadow-sm mb-5 border-info">
-    <div class="card-header bg-info text-white">
-      <h3 class="mb-0">
-        <i class="fas fa-clipboard-list me-2"></i> Assigned Tests
-        <span class="badge bg-light text-dark float-end">{{ assignments|length }}</span>
-      </h3>
-    </div>
+.user-welcome {
+  position: relative;
+  padding-bottom: 0.5rem;
+}
 
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th class="ps-4">Sample ID</th>
-              <th>Test Type</th>
-              <th>Status</th>
-              <th class="text-end pe-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for a in assignments %}
-            <tr>
-              <td class="ps-4 fw-semibold">{{ a.sample.sample_id }}</td>
+.user-welcome h2 {
+  color: var(--primary);
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
 
-              <td>
-                <div class="d-flex align-items-center">
-                  <div class="avatar-sm me-2">
-                    <span class="avatar-title bg-light rounded-circle">
-                      <i class="fas fa-vial"></i>
-                    </span>
-                  </div>
-                  {{ a.get_test_type_display }}
-                </div>
-              </td>
+.user-welcome::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  border-radius: 2px;
+}
 
-              <td>
-                {% if a.status == 'assigned' %}
-                  <span class="badge bg-secondary">Assigned</span>
-                {% elif a.status == 'in_progress' %}
-                  <span class="badge bg-warning text-dark">In Progress</span>
-                {% elif a.status == 'submitted' %}
-                  <span class="badge bg-primary">Submitted</span>
-                {% else %}
-                  <span class="badge bg-success">Completed</span>
-                {% endif %}
-              </td>
+.user-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
 
-              <td class="text-end pe-4">
-                {% if a.status == 'assigned' %}
-                  <form method="post" action="{% url 'start_test' a.pk %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-outline-primary">
-                      <i class="fas fa-play-circle me-1"></i> Start Test
-                    </button>
-                  </form>
-                {% elif a.status == 'in_progress' %}
-                  <a href="{% url 'submit_test_result' a.pk %}" class="btn btn-sm btn-outline-success">
-                    <i class="fas fa-check-circle me-1"></i> Submit Result
-                  </a>
-                {% else %}
-                  <span class="text-muted small">
-                    <i class="fas fa-check-double me-1"></i> Done
-                  </span>
-                {% endif %}
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="4" class="text-center py-4">
-                <div class="text-muted">
-                  <i class="fas fa-clipboard-check fa-2x"></i>
-                  <h5>No tests assigned</h5>
-                  <p class="mb-0">All tests are completed or none have been assigned.</p>
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+.user-badge {
+  background-color: var(--primary-light);
+  color: var(--primary);
+  padding: 0.35rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.user-subtitle {
+  color: #6c757d;
+  font-style: italic;
+  max-width: 600px;
+}
+
+.alert-critical {
+  background-color: rgba(220, 53, 69, 0.1);
+  border-left: 4px solid var(--danger);
+  border-radius: 0 8px 8px 0;
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.alert-critical .alert-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--danger);
+  margin-bottom: 0.5rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  text-decoration: none;
+  color: var(--dark);
+  border: 1px solid #dee2e6;
+}
+
+.action-btn:hover {
+  background: var(--primary-light);
+  color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 64, 128, 0.1);
+}
+
+.action-btn i {
+  color: var(--primary);
+}
+
+.action-btn.primary {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+}
+
+.action-btn.primary:hover {
+  background-color: #002b57;
+  color: white;
+}
+
+.action-btn.secondary {
+  background-color: var(--secondary);
+  color: white;
+  border: none;
+}
+
+.action-btn.secondary:hover {
+  background-color: #00aab5;
+  color: white;
+}
+
+.filter-container {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+  min-width: 250px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.2);
+}
+
+.filter-reset {
+  padding: 0.75rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+  color: var(--danger);
+  cursor: pointer;
+}
+
+.filter-reset:hover {
+  background-color: #f8f9fa;
+}
+
+.test-group {
+  margin-bottom: 3rem;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.test-group-header {
+  background-color: var(--primary-light);
+  padding: 1rem 1.5rem;
+  border-left: 4px solid var(--primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.test-group-title {
+  color: var(--primary);
+  font-weight: 600;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.test-group-count {
+  background-color: var(--primary);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+}
+
+.test-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.test-table thead th {
+  background-color: #f8f9fa;
+  color: var(--dark);
+  padding: 1rem;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.test-table tbody tr {
+  transition: all 0.2s ease;
+}
+
+.test-table tbody tr:hover {
+  background-color: rgba(0, 64, 128, 0.03);
+}
+
+.test-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f1f1f1;
+  vertical-align: middle;
+}
+
+.client-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.client-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #e0ecff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.client-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.client-name {
+  font-weight: 600;
+}
+
+.client-id {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.sample-badge {
+  display: inline-block;
+  background-color: #f8f9fa;
+  color: var(--dark);
+  padding: 0.35rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  margin: 0.2rem;
+  white-space: nowrap;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.status-pending {
+  background-color: rgba(255, 193, 7, 0.2);
+  color: #d39e00;
+}
+
+.status-in_progress {
+  background-color: rgba(0, 123, 255, 0.2);
+  color: #0062cc;
+}
+
+.status-completed {
+  background-color: rgba(40, 167, 69, 0.2);
+  color: #218838;
+}
+
+.status-overdue {
+  background-color: rgba(220, 53, 69, 0.2);
+  color: #c82333;
+}
+
+.status-due-today {
+  background-color: rgba(255, 193, 7, 0.3);
+  color: #856404;
+}
+
+.deadline-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.deadline-date {
+  font-weight: 600;
+}
+
+.deadline-meta {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.action-cell {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.table-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  color: white;
+  background-color: var(--primary);
+  border: none;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.table-btn:hover {
+  background-color: #002b57;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  color: white;
+}
+
+.table-btn.secondary {
+  background-color: var(--secondary);
+}
+
+.table-btn.secondary:hover {
+  background-color: #00aab5;
+}
+
+.table-btn.success {
+  background-color: var(--success);
+}
+
+.table-btn.success:hover {
+  background-color: #218838;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  color: #dee2e6;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* Animation for overdue items */
+@keyframes pulseWarning {
+  0% { background-color: rgba(255, 193, 7, 0.05); }
+  50% { background-color: rgba(255, 193, 7, 0.15); }
+  100% { background-color: rgba(255, 193, 7, 0.05); }
+}
+
+@keyframes pulseDanger {
+  0% { background-color: rgba(220, 53, 69, 0.05); }
+  50% { background-color: rgba(220, 53, 69, 0.15); }
+  100% { background-color: rgba(220, 53, 69, 0.05); }
+}
+
+.overdue-row {
+  animation: pulseDanger 2s ease infinite;
+}
+
+.due-today-row {
+  animation: pulseWarning 2s ease infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+  }
+  
+  .filter-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-select {
+    width: 100%;
+  }
+  
+  .test-table {
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .action-cell {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+}
+</style>
+
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <div class="user-welcome">
+      <h2>Welcome, {{ user.get_full_name }}</h2>
+      <div class="user-meta">
+        <span class="user-badge">Analyst</span>
+        <span class="user-subtitle">Your work helps us maintain ISO 17025 accreditation by ensuring timely and accurate test results</span>
       </div>
     </div>
+    <div class="user-stats">
+      <div class="stat-badge">
+        <i class="fas fa-flask"></i> {{ total_assignments }} Assignments
+      </div>
+    </div>
+  </div>
 
-    <div class="card-footer bg-light">
-      <div class="d-flex justify-content-between align-items-center">
-        <small class="text-muted">Last updated: {% now "DATETIME_FORMAT" %}</small>
-        <div class="legend">
-          <span class="badge bg-secondary me-2">Assigned</span>
-          <span class="badge bg-warning text-dark me-2">In Progress</span>
-          <span class="badge bg-primary me-2">Submitted</span>
-          <span class="badge bg-success">Completed</span>
+  {% if has_critical_deadlines %}
+    <div class="alert-critical">
+      <div class="alert-title">
+        <i class="fas fa-exclamation-triangle"></i>
+        Priority Attention Required
+      </div>
+      <p>You have {{ critical_count }} tests that are overdue or due today. Please prioritize completing these to maintain our accreditation standards.</p>
+    </div>
+  {% endif %}
+
+  <div class="action-buttons">
+    <a href="{% url 'equipment_log_create' %}" class="action-btn primary">
+      <i class="fas fa-plus"></i> New Equipment Log
+    </a>
+    <a href="{% url 'equipment_log_list' %}" class="action-btn secondary">
+      <i class="fas fa-list"></i> View Equipment Logs
+    </a>
+  </div>
+
+  <form method="get" class="filter-container">
+    <select name="test_type" id="test_type" class="filter-select" onchange="this.form.submit()">
+      <option value="">-- All Test Types --</option>
+      {% for t in test_types %}
+        <option value="{{ t }}" {% if selected_test_type == t %}selected{% endif %}>{{ t|title }}</option>
+      {% endfor %}
+    </select>
+    {% if selected_test_type %}
+      <a href="{% url 'analyst_dashboard' %}" class="filter-reset">
+        <i class="fas fa-times"></i> Clear Filter
+      </a>
+    {% endif %}
+  </form>
+
+  {% for group in grouped_assignments %}
+    {% if group.items %}
+      <div class="test-group">
+        <div class="test-group-header">
+          <h3 class="test-group-title">
+            <i class="fas fa-tasks"></i> {{ group.test_type|title }} Tests
+            <span class="test-group-count">{{ group.items|length }}</span>
+          </h3>
+          <div class="test-group-actions">
+            <small class="text-muted">Sorted by deadline</small>
+          </div>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="test-table">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Samples</th>
+                <th>Test Parameters</th>
+                <th>Deadline Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in group.items %}
+                <tr class="{% if a.deadline < today and a.status != 'completed' %}overdue-row{% elif a.deadline == today and a.status != 'completed' %}due-today-row{% endif %}">
+                  <td>
+                    <div class="client-cell">
+                      <div class="client-avatar">
+                        {{ a.samples.first.client.client_id|slice:":1"|upper }}
+                      </div>
+                      <div class="client-info">
+                        <span class="client-name">{{ a.samples.first.client.name }}</span>
+                        <span class="client-id">ID: {{ a.samples.first.client.client_id }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                      {% for s in a.samples.all %}
+                        <span class="sample-badge">{{ s.sample_id }}</span>
+                      {% endfor %}
+                    </div>
+                  </td>
+                  <td>
+                    {{ a.test_parameter|title }}
+                    {% if a.test_parameter == 'proximate' and a.sub_parameter %}
+                      <div class="text-muted" style="font-size: 0.85rem;">
+                        {{ a.sub_parameter|title }}
+                      </div>
+                    {% endif %}       
+                  </td>
+                  {% if a.review_status == 'rejected' and a.review_comments %}
+                    <td colspan="5">
+                     <div class="alert alert-warning mt-2" style="margin-top: 8px;">
+                    <strong>Reviewer Comments:</strong> {{ a.review_comments }}
+                   </div>
+                  </td>
+                  {% endif %}
+                  <td>
+                    <div class="deadline-cell">
+                      {% if a.status == 'completed' %}
+                        <span class="status-badge status-completed">Completed</span>
+                        <span class="deadline-meta">
+                          Submitted: {{ a.completed_at|date:"Y-m-d H:i" }}
+                        </span>
+                      {% elif a.deadline == today %}
+                        <span class="status-badge status-due-today">Due Today</span>
+                        <span class="deadline-meta">
+                          Started: {{ a.started_at|date:"Y-m-d H:i"|default:"Not started" }}
+                        </span>
+                      {% elif a.deadline < today %}
+                        <span class="status-badge status-overdue">Overdue</span>
+                        <span class="deadline-meta">
+                          Due: {{ a.deadline|date:"Y-m-d" }} • Started: {{ a.started_at|date:"Y-m-d H:i"|default:"Not started" }}
+                        </span>
+                      {% else %}
+                        <span class="status-badge status-pending">{{ a.status|capfirst }}</span>
+                        <span class="deadline-meta">
+                          Due: {{ a.deadline|date:"Y-m-d" }} • Started: {{ a.started_at|date:"Y-m-d H:i"|default:"Not started" }}
+                        </span>
+                      {% endif %}
+                    </div>
+                  </td>
+<td class="action-cell">
+  {% if a.review_status == 'rejected' %}
+    <a href="{% url 'enter_result' a.id %}" class="table-action-btn">
+      <i class="fas fa-edit"></i> Re-enter Results
+    </a>
+  {% elif not a.result %}
+    {% if not a.started %}
+      <a href="{% url 'start_test' a.id %}" class="table-action-btn">
+        <i class="fas fa-play"></i> Start
+      </a>
+    {% else %}
+      <a href="{% url 'enter_result' a.id %}" class="table-action-btn">
+        <i class="fas fa-edit"></i> Enter Results
+      </a>
+    {% endif %}
+  {% else %}
+    <span class="status-badge status-completed">
+      <i class="fas fa-check"></i> Submitted
+    </span>
+  {% endif %}
+</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </div>
+    {% endif %}
+  {% empty %}
+    <div class="empty-state">
+      <i class="fas fa-clipboard-check"></i>
+      <h3>No Test Assignments Found</h3>
+      <p>When new test assignments are created, they will appear here.</p>
+      <a href="#" class="table-btn" style="margin-top: 1rem;">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </a>
     </div>
-  </div>
-
+  {% endfor %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize any interactive elements here
+  // This maintains all original functionality while allowing for enhancements
+  
+  // Example: Add click handlers for status badges if needed
+  document.querySelectorAll('.status-badge').forEach(badge => {
+    badge.addEventListener('click', (e) => {
+      // You could add filtering functionality here if desired
+      console.log('Status badge clicked:', e.target.textContent.trim());
+    });
+  });
+});
+</script>
 {% endblock %}

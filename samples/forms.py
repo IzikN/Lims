@@ -15,39 +15,15 @@ class SubmitResultForm(forms.ModelForm):
 
 
 class TestAssignmentForm(forms.ModelForm):
-    analyst = forms.ModelChoiceField(
-        queryset=User.objects.filter(groups__name='Analyst'),
-        label="Assign to Analyst"
-    )
-    sample = forms.ModelMultipleChoiceField(
-        queryset=Sample.objects.none(),
-        widget=forms.CheckboxSelectMultiple,
-        label="Samples"
-    )
-
     class Meta:
         model = TestAssignment
-        fields = ['sample', 'analyst', 'test_parameter', 'sub_parameter', 'deadline']
+        fields = ['analyst', 'test_parameter', 'sub_parameter', 'deadline', 'samples']
 
     def __init__(self, *args, **kwargs):
-        client_id = kwargs.pop('client_id', None)
         super().__init__(*args, **kwargs)
-        if client_id:
-            self.fields['sample'].queryset = Sample.objects.filter(client__client_id=client_id)
-        else:
-            self.fields['sample'].queryset = Sample.objects.none()
-
-    def clean(self):
-        cleaned_data = super().clean()
-        test_param = cleaned_data.get('test_parameter')
-        sub_param = cleaned_data.get('sub_parameter')
-        # Require sub_parameter only if test_parameter is proximate
-        if test_param == 'proximate' and not sub_param:
-            self.add_error('sub_parameter', 'Please select a sub-parameter')
-        if test_param != 'proximate':
-            cleaned_data['sub_parameter'] = None
-        return cleaned_data
-
+        # Dynamically load analysts
+        self.fields['analyst'].queryset = AnalystProfile.objects.all()
+        self.fields['analyst'].label_from_instance = lambda obj: f"{obj.full_name}"
 
 class TestRequestForm(forms.ModelForm):
     analysis_types = forms.MultipleChoiceField(
