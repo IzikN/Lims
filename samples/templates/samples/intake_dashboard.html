@@ -441,9 +441,10 @@
               <i class="fas fa-eye"></i> View
             </a>
             {% if user.is_authenticated and user.role == 'lab_manager' %}
-              <a href="{% url 'assign_test' %}?client_id={{ request.client.id }}" class="action-btn secondary">
-                <i class="fas fa-user-tag"></i> Assign
-              </a>
+            <a href="{% url 'assign_test' %}?client_id={{ request.client.client_id }}" class="btn btn-sm btn-success">
+      <i class="fas fa-user-tag"></i> Assign Test
+    </a>
+              
             {% endif %}
           </div>
         </td>

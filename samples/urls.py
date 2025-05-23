@@ -1,8 +1,11 @@
 from django.urls import path
 from . import views
-
+from .views import certificate_of_analysis
 
 urlpatterns = [
+    path('generate-coa/<str:client_id>/', views.generate_coa_view, name='generate_coa'),
+    path('coa/<str:client_id>/', certificate_of_analysis, name='certificate_of_analysis'),
+    path('invoice/<int:invoice_id>/', views.invoice_detail_view, name='invoice_detail'),
     path('analyst/start-test/<int:assignment_id>/', views.start_test, name='start_test'),
     path('manager/results/', views.result_overview, name='result_overview'),
     path('analyst/enter-result/<int:assignment_id>/', views.enter_result, name='enter_result'),

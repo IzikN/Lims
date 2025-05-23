@@ -14,6 +14,70 @@ from django.utils import timezone
 from .models import TestAssignment, TestRequest
 from django.views.decorators.http import require_http_methods
 from .models import ReviewLog
+from .models import Invoice
+from samples.models import Sample
+from django.utils.crypto import get_random_string
+from django.shortcuts import render, get_object_or_404
+from .models import ResultReport, Client
+from collections import defaultdict
+from django.utils import timezone
+from .models import TestAssignment, ReviewLog, ResultReport
+
+@login_required
+def generate_coa_view(request, client_id):
+    client = get_object_or_404(Client, client_id=client_id)
+    results = ResultReport.objects.filter(client__client_id=client_id)
+
+    if not results.exists():
+        messages.warning(request, "No approved results available for this client.")
+        return redirect('lab_manager_dashboard')
+
+    # Group results by test parameter
+    grouped_results = {}
+    for result in results:
+        param = result.test_parameter
+        if param not in grouped_results:
+            grouped_results[param] = []
+        grouped_results[param].append(result)
+
+    # Optional: Environmental data could be tracked elsewhere; placeholder for now
+    environmental_data = {
+        "temperature": "25°C",
+        "humidity": "60%"
+    }
+
+    context = {
+        'client': client,
+        'results': results,
+        'grouped_results': grouped_results,
+        'environmental_data': environmental_data,
+    }
+    return render(request, 'samples/coa_template.html', context)
+
+def certificate_of_analysis(request, client_id):
+    client = get_object_or_404(Client, client_id=client_id)
+    reports = ResultReport.objects.filter(client_id=client_id, approved=True)
+
+    pivot_data = defaultdict(dict)
+    methods_used = set()
+    sample_ids = set()
+
+    for report in reports:
+        pivot_data[report.test_parameter][report.sample.sample_id] = report.result_value
+        sample_ids.add(report.sample.sample_id)
+        methods_used.add(report.method_reference)
+
+    context = {
+        'client': client,
+        'pivot_data': pivot_data,
+        'sample_ids': sorted(sample_ids),
+        'methods_used': sorted(methods_used),
+        'report_date': timezone.now().date(),
+    }
+
+    return render(request, 'samples/certificate_of_analysis.html', context)
+
+PRICE_MAP = Sample.TEST_TYPE_CHOICES
 
 def sync_test_request_status(client):
     test_request = TestRequest.objects.filter(client=client).first()
@@ -81,7 +145,7 @@ def review_test(request, assignment_id):
         comments = request.POST.get('comments', '')
         reviewer = request.user
 
-        # Save current review
+        # Save current review log
         ReviewLog.objects.create(
             assignment=assignment,
             reviewer=reviewer,
@@ -89,6 +153,7 @@ def review_test(request, assignment_id):
             decision='approved' if action == 'approve' else 'rejected'
         )
 
+        # Update assignment status and review info
         assignment.review_comments = comments
         assignment.reviewer = reviewer
         assignment.latest_review = timezone.now()
@@ -96,6 +161,18 @@ def review_test(request, assignment_id):
         if action == 'approve':
             assignment.review_status = 'approved'
             assignment.status = 'completed'
+
+            # Trigger ResultReport creation (if it does not already exist)
+            report, created = ResultReport.objects.get_or_create(
+                assignment=assignment,
+                defaults={
+                    'client': assignment.sample.client,
+                    'sample': assignment.sample,
+                    'test_parameter': assignment.test_parameter,
+                    'result_value': assignment.result_value,
+                    'method_reference': 'AOAC'  # or dynamically set based on parameter
+                }
+            )
         elif action == 'reject':
             assignment.review_status = 'rejected'
             assignment.status = 'in_progress'
@@ -104,6 +181,7 @@ def review_test(request, assignment_id):
         return redirect('result_overview')
 
     return render(request, 'samples/review_test.html', {'assignment': assignment})
+
 
 @login_required
 def result_overview(request):
@@ -211,15 +289,30 @@ def generate_unique_client_id():
             return client_id
         number += 1
 
-@login_required
+
+def generate_invoice_number():
+    return f"JGL-{get_random_string(6).upper()}"
+
+
+
+# Define price for each parameter
+PRICE_MAP = {
+    'proximate': 15000,
+    'aflatoxin': 20000,
+    'vitamin': 10000,
+    'gross_energy': 10000,
+    'water_analysis': 20000,
+    'microbial': 2000,
+}
+
 def test_request_form_view(request):
     if request.method == 'POST':
         client_name = request.POST['client_name']
         phone = request.POST['phone']
         client_id = generate_unique_client_id()
 
-        # Get or create the client using client_id
-        client, created = Client.objects.get_or_create(
+        # Create or get client
+        client, _ = Client.objects.get_or_create(
             client_id=client_id,
             defaults={
                 'name': client_name,
@@ -229,8 +322,8 @@ def test_request_form_view(request):
                 'address': request.POST.get('address'),
             }
         )
-
-        # Create the test request
+   
+        # Create test request
         test_request = TestRequest.objects.create(
             client=client,
             organization=request.POST.get('organization'),
@@ -239,7 +332,7 @@ def test_request_form_view(request):
             number_of_samples=request.POST.get('number_of_samples'),
             nature_of_samples=request.POST.get('nature_of_samples', ''),
             proposed_date_of_collection=request.POST.get('proposed_date_of_collection'),
-            total_amount_charged=request.POST.get('total_amount'),
+            total_amount_charged=0,  # will update later
             amount_paid=request.POST.get('amount_paid'),
             name_of_receiver=request.POST.get('receiver'),
             job_description=request.POST.get('job_description'),
@@ -248,9 +341,10 @@ def test_request_form_view(request):
             created_at=timezone.now(),
         )
 
-        # Handle multiple samples
         sample_ids = request.POST.getlist('sample_ids[]')
         weights = request.POST.getlist('sample_weights[]')
+
+        total_amount = 0
 
         for i in range(len(sample_ids)):
             params = request.POST.getlist(f'sample_parameters_{i}[]')
@@ -263,15 +357,29 @@ def test_request_form_view(request):
                 parameters=", ".join(params)
             )
 
-        messages.success(request, "Test request submitted successfully.")
-        return redirect('intake_dashboard')
+            for param in params:
+                param_key = param.strip().lower().replace(" ", "_")
+                total_amount += PRICE_MAP.get(param_key, 0)
+
+        # Update test request amount
+        test_request.total_amount_charged = total_amount
+        test_request.save()
+
+        # Create invoice
+        invoice = Invoice.objects.create(
+            client=client,
+            test_request=test_request,
+            total_amount=total_amount
+        )
+
+        messages.success(request, "Test request and invoice generated successfully.")
+        return redirect('invoice_detail', invoice_id=invoice.id)
 
     # For GET request
     client_id = generate_unique_client_id()
     return render(request, 'samples/test_request_form.html', {
         'client_id': client_id
     })
-
 
 def is_customer_service(user):
     return user.groups.filter(name='Customer Service').exists()
@@ -399,3 +507,8 @@ def analyst_dashboard(request):
         'test_types': test_types,
         'selected_test_type': test_type_filter,
     })
+
+
+def invoice_detail_view(request, invoice_id):
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    return render(request, 'samples/invoice_detail.html', {'invoice': invoice})

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Certificate of Analysis</title>
+    <style>
+        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>Certificate of Analysis</h2>
+    <p><strong>Client Name:</strong> {{ client.name }}</p>
+    <p><strong>Organization:</strong> {{ client.organization }}</p>
+    <p><strong>Address:</strong> {{ client.address }}</p>
+    <p><strong>Email:</strong> {{ client.email }}</p>
+    <p><strong>Phone:</strong> {{ client.phone }}</p>
+    <p><strong>Client ID:</strong> {{ client.client_id }}</p>
+    <p><strong>Report Date:</strong> {{ report_date }}</p>
+
+    <h3>Test Results</h3>
+    <table>
+        <tr>
+            <th>Parameter</th>
+            {% for sid in sample_ids %}
+                <th>{{ sid }}</th>
+            {% endfor %}
+        </tr>
+        {% for param, results in pivot_data.items %}
+        <tr>
+            <td>{{ param }}</td>
+            {% for sid in sample_ids %}
+                <td>{{ results.sid|default:'-' }}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h3>Method References</h3>
+    <ul>
+        {% for method in methods_used %}
+            <li>{{ method }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

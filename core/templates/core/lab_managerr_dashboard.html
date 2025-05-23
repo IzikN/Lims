@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h2>Lab Manager Dashboard</h2>
+
+<!-- Summary Cards -->
+<div class="dashboard-cards">
+    <div>Total Samples: {{ total_samples }}</div>
+    <div>Pending: {{ pending }}</div>
+    <div>In Progress: {{ in_progress }}</div>
+    <div>Completed: {{ completed }}</div>
+</div>
+
+<!-- Test Type Summary -->
+<h4>Test Types Breakdown</h4>
+<ul>
+    {% for test_type, count in test_types.items %}
+        <li>{{ test_type }}: {{ count }}</li>
+    {% endfor %}
+</ul>
+
+<!-- Generate COA Section -->
+<h4>Generate Certificate of Analysis</h4>
+<form id="generate-coa-form" method="POST">
+    {% csrf_token %}
+    <label for="client_id">Select Client ID:</label>
+    <select id="client_id" name="client_id" required>
+        <option value="">-- Select Client ID --</option>
+        {% for client_id in client_ids %}
+            <option value="{{ client_id }}">{{ client_id }}</option>
+        {% endfor %}
+    </select>
+
+    <label for="sample_id">Select Sample ID:</label>
+    <select id="sample_id" name="sample_id" required>
+        <option value="">-- Select Sample --</option>
+    </select>
+
+    <button type="submit" class="btn btn-primary">Generate COA</button>
+</form>
+
+<!-- Results -->
+<div id="coa-result" style="margin-top: 20px;"></div>
+
+<script>
+    document.getElementById('generate-coa-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const form = e.target;
+        const formData = new FormData(form);
+        const resultDiv = document.getElementById('coa-result');
+
+        const clientId = document.getElementById('client-id-select').value;
+
+        if (!clientId) {
+            alert('Please select a client ID');
+            return;
+        }
+
+        fetch(`/samples/generate-coa/${clientId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+            },
+            body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+            resultDiv.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    });
+</script>
+{% endblock %}

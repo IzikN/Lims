@@ -1,4 +1,4 @@
-k{% extends 'base.html' %}
+{% extends 'base.html' %}
 
 {% block title %}Login - JaaGeeLab{% endblock %}
 
@@ -15,29 +15,29 @@ k{% extends 'base.html' %}
 }
 
 .login-container {
-  display: flex;
   min-height: 100vh;
+  display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
-  padding: 2rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ed 100%);
 }
 
 .login-card {
   width: 100%;
   max-width: 420px;
+  border: none;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 64, 128, 0.15);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .login-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0, 64, 128, 0.2);
 }
 
-.card-header {
+.login-header {
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   color: white;
   padding: 1.5rem;
@@ -46,7 +46,7 @@ k{% extends 'base.html' %}
   overflow: hidden;
 }
 
-.card-header::before {
+.login-header::before {
   content: '';
   position: absolute;
   top: -50px;
@@ -57,24 +57,23 @@ k{% extends 'base.html' %}
   border-radius: 50%;
 }
 
-.card-header h4 {
-  font-weight: 600;
+.login-header h2 {
   margin: 0;
+  font-weight: 700;
   position: relative;
 }
 
-.card-body {
+.login-body {
   padding: 2rem;
   background: white;
 }
 
-.alert-danger {
-  background-color: rgba(220, 53, 69, 0.1);
-  color: var(--danger);
+.alert-message {
+  border-radius: 8px;
   border-left: 4px solid var(--danger);
-  border-radius: 0 6px 6px 0;
   padding: 1rem;
   margin-bottom: 1.5rem;
+  background-color: rgba(220, 53, 69, 0.05);
 }
 
 .form-group {
@@ -84,7 +83,7 @@ k{% extends 'base.html' %}
 .form-label {
   display: block;
   margin-bottom: 0.5rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--dark);
 }
 
@@ -107,71 +106,59 @@ k{% extends 'base.html' %}
   width: 100%;
   padding: 0.75rem;
   border-radius: 8px;
-  font-weight: 500;
+  font-weight: 600;
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
   color: white;
   border: none;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 64, 128, 0.1);
 }
 
 .btn-login:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 64, 128, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 64, 128, 0.2);
 }
 
-.card-footer {
+.login-footer {
   padding: 1.5rem;
   text-align: center;
   background: var(--light);
   border-top: 1px solid #e9ecef;
 }
 
-.register-link {
+.login-link {
   color: var(--primary);
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
-.register-link:hover {
+.login-link:hover {
   color: var(--secondary);
   text-decoration: underline;
 }
 
-/* Animation for error messages */
+/* Animation for form */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.alert-danger {
-  animation: fadeIn 0.3s ease;
-}
-
-/* Responsive adjustments */
-@media (max-width: 576px) {
-  .login-container {
-    padding: 1rem;
-  }
-  
-  .card-body {
-    padding: 1.5rem;
-  }
+.animate-form {
+  animation: fadeIn 0.5s ease;
 }
 </style>
 
 <div class="login-container">
-  <div class="login-card">
-    <div class="card-header">
-      <h4><i class="fas fa-flask me-2"></i>JaaGeeLab Login</h4>
+  <div class="login-card animate-form">
+    <div class="login-header">
+      <h2>Welcome to JaaGeeLab</h2>
     </div>
     
-    <div class="card-body">
+    <div class="login-body">
       {% if messages %}
-        <div class="alert alert-danger">
+        <div class="alert-message">
           {% for message in messages %}
-            <p class="mb-0"><i class="fas fa-exclamation-circle me-2"></i>{{ message }}</p>
+            <p><i class="fas fa-exclamation-circle me-2"></i>{{ message }}</p>
           {% endfor %}
         </div>
       {% endif %}
@@ -188,14 +175,14 @@ k{% extends 'base.html' %}
           <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
         </div>
         
-        <button type="submit" class="btn btn-login">
-          <i class="fas fa-sign-in-alt me-2"></i>Login
+        <button type="submit" class="btn-login">
+          <i class="fas fa-sign-in-alt me-2"></i> Login
         </button>
       </form>
     </div>
     
-    <div class="card-footer">
-      Don't have an account? <a href="{% url 'choose_role' %}" class="register-link">Register here</a>
+    <div class="login-footer">
+      Don't have an account? <a href="{% url 'choose_role' %}" class="login-link">Register here</a>
     </div>
   </div>
 </div>

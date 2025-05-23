@@ -2,7 +2,8 @@ from django.db import models
 from django.conf import settings
 from django.db import models
 from django.conf import settings
-
+from django.utils.crypto import get_random_string
+from django.utils import timezone
 
 class AnalystProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -85,16 +86,20 @@ class Sample(models.Model):
         ('WAT', 'Water'),
         ('MIC', 'Microbial'),
     ]
-    test_type = models.CharField(
-        max_length=4,
-        choices=TEST_TYPE_CHOICES,
-        default='PROX')
 
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('In Progress', 'In Progress'),
+        ('Completed', 'Completed'),
+    ]
+
+    test_type = models.CharField(max_length=4, choices=TEST_TYPE_CHOICES, default='PROX')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
     test_request = models.ForeignKey(TestRequest, on_delete=models.CASCADE)
     client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='samples')
     sample_id = models.CharField(max_length=100)
     nature = models.CharField(max_length=255, default='Feed')
-    weight = models.DecimalField(max_digits=10, decimal_places=3, default=0)
+    weight = models.DecimalField(max_digits=10, decimal_places=3, default=0.0)
     parameters = models.TextField(default='Proximate')
 
     def __str__(self):
@@ -177,3 +182,33 @@ class ReviewLog(models.Model):
 
     def __str__(self):
         return f"{self.reviewer} - {self.decision} on {self.reviewed_at.strftime('%Y-%m-%d %H:%M')}"
+
+from django.utils.crypto import get_random_string
+
+class Invoice(models.Model):
+    client = models.ForeignKey(Client, on_delete=models.CASCADE)
+    test_request = models.OneToOneField(TestRequest, on_delete=models.CASCADE)
+    invoice_number = models.CharField(max_length=20, unique=True, editable=False)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date_generated = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, choices=[('Paid', 'Paid'), ('Unpaid', 'Unpaid')], default='Unpaid')
+
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            self.invoice_number = 'JGL' + get_random_string(8).upper()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.invoice_number} - {self.client.name}"
+
+class ResultReport(models.Model):
+    client_id = models.CharField(max_length=50)
+    sample = models.ForeignKey('Sample', on_delete=models.CASCADE)
+    test_parameter = models.CharField(max_length=100)
+    result_value = models.CharField(max_length=100)
+    method_reference = models.CharField(max_length=255, default='AOAC')
+    approved = models.BooleanField(default=False)
+    report_date = models.DateField(default=timezone.now)
+
+    def __str__(self):
+        return f"{self.client_id} - {self.sample.sample_id} - {self.test_parameter}"

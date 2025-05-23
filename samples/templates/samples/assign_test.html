@@ -1,71 +1,278 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h2 style="text-align: center; color: #004080; margin-bottom: 20px;">Assign Test to Analyst</h2>
+<style>
+:root {
+  --primary: #003366;
+  --primary-light: #e0ecff;
+  --secondary: #00c4cc;
+  --success: #28a745;
+  --danger: #dc3545;
+  --light: #f8f9fa;
+  --dark: #343a40;
+}
 
-{% if client_id and samples %}
-<form method="POST" style="max-width: 800px; margin: 0 auto;">
-  {% csrf_token %}
+.assignment-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
 
-  <div style="margin-bottom: 20px;">
-    <label>Select Sample(s):</label>
-    <select name="samples" multiple required style="width: 100%; padding: 10px;">
-      {% for sample in samples %}
-        <option value="{{ sample.id }}">{{ sample.sample_id }}</option>
-      {% endfor %}
-    </select>
-    <small>Hold Ctrl or Cmd to select multiple samples.</small>
+.form-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.form-header h2 {
+  color: var(--primary);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.form-header::after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(to right, var(--primary), var(--secondary));
+  margin: 0.5rem auto 0;
+  border-radius: 2px;
+}
+
+.form-card {
+  background: white;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 64, 128, 0.08);
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.form-select, .form-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.form-select:focus, .form-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 64, 128, 0.1);
+}
+
+.multi-select {
+  height: auto;
+  min-height: 120px;
+}
+
+.helper-text {
+  font-size: 0.85rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.test-block {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  background: var(--light);
+  position: relative;
+}
+
+.test-block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.test-block-title {
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.remove-test {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 1.25rem;
+}
+
+.sub-parameter-group {
+  display: none;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #dee2e6;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #002b57;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 64, 128, 0.2);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.btn-secondary:hover {
+  background: var(--primary-light);
+}
+
+.btn-add {
+  background: var(--secondary);
+  color: white;
+  margin-bottom: 1.5rem;
+}
+
+.btn-add:hover {
+  background: #00aab5;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.no-data {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+}
+
+/* Animation for dynamic elements */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.new-test-block {
+  animation: fadeIn 0.3s ease;
+}
+</style>
+
+<div class="assignment-container">
+  <div class="form-header">
+    <h2>Assign Tests to Samples</h2>
+    <p>Select samples and configure test parameters for analysis</p>
   </div>
 
-  <div id="test-blocks">
-    <div class="test-block" style="border: 1px solid #ccc; padding: 15px; margin-bottom: 15px;">
-      <label>Test Parameter:</label>
-      <select name="test_parameter[]" class="test-parameter" style="width: 100%; padding: 10px;" required onchange="toggleSubParameter(this)">
-        <option value="">Select test</option>
-        <option value="proximate">Proximate</option>
-        <option value="aflatoxin">Aflatoxin</option>
-        <option value="gross_energy">Gross Energy</option>
-        <option value="moisture">Moisture</option>
+  {% if client_id and samples %}
+  <form method="POST" class="form-card">
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label class="form-label">Select Sample(s)</label>
+      <select name="samples" multiple required class="form-select multi-select">
+        {% for sample in samples %}
+          <option value="{{ sample.id }}">{{ sample.sample_id }}</option>
+        {% endfor %}
       </select>
+      <span class="helper-text">Hold Ctrl/Cmd to select multiple samples</span>
+    </div>
 
-      <div class="sub-parameter-group" style="display: none; margin-top: 10px;">
-        <label>Sub-Parameter:</label>
-        <select name="sub_parameter[]" style="width: 100%; padding: 10px;">
-          <option value="">Select sub-parameter</option>
-          <option value="ash">Ash</option>
-          <option value="fiber">Fiber</option>
-          <option value="protein">Protein</option>
-          <option value="moisture">Moisture</option>
-          <option value="fat">Fat</option>
-        </select>
-      </div>
+    <div id="test-blocks">
+      <div class="test-block">
+        <div class="test-block-header">
+          <span class="test-block-title">Test Configuration #1</span>
+          <button type="button" class="remove-test" onclick="removeTestBlock(this)" style="display: none;">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
 
-      <div style="margin-top: 10px;">
-        <label>Assign Analyst:</label>
-        <select name="analyst[]" style="width: 100%; padding: 10px;" required>
-          {% for analyst in analysts %}
-            <option value="{{ analyst.id }}">{{ analyst.full_name }}</option>
-          {% endfor %}
-        </select>
-      </div>
+        <div class="form-group">
+          <label class="form-label">Test Parameter</label>
+          <select name="test_parameter[]" class="form-select test-parameter" onchange="toggleSubParameter(this)">
+            <option value="">Select test</option>
+            <option value="proximate">Proximate</option>
+            <option value="aflatoxin">Aflatoxin</option>
+            <option value="gross_energy">Gross Energy</option>
+            <option value="moisture">Moisture</option>
+          </select>
+        </div>
 
-      <div style="margin-top: 10px;">
-        <label>Deadline:</label>
-        <input type="date" name="deadline[]" class="deadline" required style="width: 100%; padding: 10px;">
+        <div class="sub-parameter-group">
+          <label class="form-label">Sub-Parameter</label>
+          <select name="sub_parameter[]" class="form-select">
+            <option value="">Select sub-parameter</option>
+            <option value="ash">Ash</option>
+            <option value="fiber">Fiber</option>
+            <option value="protein">Protein</option>
+            <option value="moisture">Moisture</option>
+            <option value="fat">Fat</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Assign Analyst</label>
+          <select name="analyst[]" class="form-select" required>
+            {% for analyst in analysts %}
+              <option value="{{ analyst.id }}">{{ analyst.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Deadline</label>
+          <input type="date" name="deadline[]" class="form-input deadline" required>
+        </div>
       </div>
     </div>
-  </div>
 
-  <button type="button" onclick="addTestBlock()" style="margin-bottom: 20px; padding: 10px 15px;">+ Add Another Test</button>
+    <button type="button" onclick="addTestBlock()" class="btn btn-add">
+      <i class="fas fa-plus"></i> Add Another Test
+    </button>
 
-  <div style="text-align: center;">
-    <button type="submit" style="padding: 10px 20px; background-color: green; color: white;">Submit</button>
-    <a href="{% url 'intake_dashboard' %}" style="margin-left: 10px;">Cancel</a>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">
+        <i class="fas fa-save"></i> Save Assignments
+      </button>
+      <a href="{% url 'intake_dashboard' %}" class="btn btn-secondary">
+        <i class="fas fa-times"></i> Cancel
+      </a>
+    </div>
+  </form>
+  {% else %}
+  <div class="no-data">
+    <i class="fas fa-flask" style="font-size: 3rem; color: #dee2e6; margin-bottom: 1rem;"></i>
+    <h3>No Client Selected</h3>
+    <p>Please select a client with available samples to assign tests</p>
   </div>
-</form>
-{% else %}
-<p style="text-align: center;">No client selected or no samples available.</p>
-{% endif %}
+  {% endif %}
+</div>
 
 <script>
   function setDefaultDeadlines() {
@@ -79,18 +286,53 @@
   function addTestBlock() {
     const first = document.querySelector('.test-block');
     const clone = first.cloneNode(true);
-
+    const blockCount = document.querySelectorAll('.test-block').length + 1;
+    
+    // Update block title
+    clone.querySelector('.test-block-title').textContent = `Test Configuration #${blockCount}`;
+    
+    // Show remove button (except for first block)
+    clone.querySelector('.remove-test').style.display = 'block';
+    
+    // Reset all inputs
     clone.querySelectorAll('select, input').forEach(el => {
       if (el.tagName === 'SELECT') el.selectedIndex = 0;
       if (el.type === 'date') el.value = '';
     });
-
+    
     // Hide sub-parameter initially
     const subGroup = clone.querySelector('.sub-parameter-group');
     if (subGroup) subGroup.style.display = 'none';
-
+    
+    // Add animation class
+    clone.classList.add('new-test-block');
+    
     document.getElementById('test-blocks').appendChild(clone);
     setDefaultDeadlines();
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+      clone.classList.remove('new-test-block');
+    }, 300);
+  }
+
+  function removeTestBlock(button) {
+    const blocks = document.querySelectorAll('.test-block');
+    if (blocks.length > 1) {
+      const block = button.closest('.test-block');
+      block.style.animation = 'fadeIn 0.3s ease reverse';
+      setTimeout(() => {
+        block.remove();
+        // Renumber remaining blocks
+        document.querySelectorAll('.test-block').forEach((block, index) => {
+          block.querySelector('.test-block-title').textContent = `Test Configuration #${index + 1}`;
+          // Hide remove button on first block
+          if (index === 0) {
+            block.querySelector('.remove-test').style.display = 'none';
+          }
+        });
+      }, 300);
+    }
   }
 
   function toggleSubParameter(selectEl) {

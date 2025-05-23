@@ -277,18 +277,13 @@
     </a>
   </div>
 
-  <!-- Chart Section -->
-  <div class="chart-container">
-    <h4 class="section-title">Assignment Overview</h4>
-    <canvas id="testChart" height="100"></canvas>
-  </div>
-
   <!-- Test Types -->
   <div class="info-card">
     <div class="card-header">
       <h4 class="section-title" style="margin-bottom: 0;">Test Types</h4>
       <span class="card-count">{{ test_types|length }} types</span>
     </div>
+     <pre>{{ test_types }}</pre>
     <div>
       {% for key, val in test_types.items %}
         <div class="list-item">
@@ -359,6 +354,24 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    function updateTotal() {
+        const testType = document.getElementById('test_type_filter').value;
+        const startDate = document.getElementById('start_date').value;
+        const endDate = document.getElementById('end_date').value;
+
+        fetch(`/dashboard/filter-data/?test_type=${testType}&start_date=${startDate}&end_date=${endDate}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('filtered_total').innerText = '₦' + data.total_filtered.toLocaleString();
+            });
+    }
+
+    document.querySelectorAll('.filter-input').forEach(input => {
+        input.addEventListener('change', updateTotal);
+    });
+</script>
+
 <script>
   const ctx = document.getElementById('testChart').getContext('2d');
   const testChart = new Chart(ctx, {

@@ -1,0 +1,53 @@
+<!-- templates/samples/coa_template.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="coa-wrapper">
+    <h2>Certificate of Analysis</h2>
+
+    <section>
+        <strong>Client Name:</strong> {{ client.name }}<br>
+        <strong>Organization:</strong> {{ client.organization }}<br>
+        <strong>Address:</strong> {{ client.address }}<br>
+        <strong>Email:</strong> {{ client.email }}<br>
+        <strong>Phone:</strong> {{ client.phone_number }}<br>
+        <strong>Client ID:</strong> {{ client.client_id }}<br>
+        <strong>Date Received:</strong> {{ client.date_received }}<br>
+        <strong>Report Date:</strong> {{ results.0.date_generated|date:"d M Y" }}<br>
+        <strong>Sample Condition:</strong> {{ client.sample_condition }}<br>
+        <strong>Nature of Sample:</strong> {{ client.nature_of_sample }}<br>
+        <strong>Sample Weight:</strong> {{ client.sample_weight }} g<br>
+        <strong>Environmental Data:</strong> Temp - {{ environmental_data.temperature }}, Humidity - {{ environmental_data.humidity }}<br>
+        <strong>Laboratory Line:</strong> JaaGee Lab Services<br>
+    </section>
+
+    <hr>
+
+    <table border="1" cellspacing="0" cellpadding="6">
+        <thead>
+            <tr>
+                <th>Test Parameter</th>
+                <th>Sample ID</th>
+                <th>Result</th>
+                <th>Method Used</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for parameter, entries in grouped_results.items %}
+                {% for entry in entries %}
+                    <tr>
+                        <td>{{ entry.test_parameter }}</td>
+                        <td>{{ entry.sample.sample_id }}</td>
+                        <td>{{ entry.result_value }}</td>
+                        <td>{{ entry.method_reference }}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <br><br>
+    <p><strong>Note:</strong> Analyses were conducted using validated methods, including references to AOAC procedures.</p>
+</div>
+{% endblock %}
